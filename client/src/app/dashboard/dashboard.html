@@ -1,0 +1,93 @@
+<main class="min-h-screen w-full bg-[#171717] text-[#ededed] px-6 py-10 md:px-12">
+  <div class="max-w-6xl mx-auto">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-[#ededed]">
+          Hola, {{ currentUser()?.name ?? 'Usuario' }}
+        </h1>
+        <p class="mt-2 text-xs font-medium text-[#737373]">
+          Módulos del sistema
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="logout()"
+        class="text-xs text-[#737373] border border-[#262626] bg-[#242424] px-3.5 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform"
+      >
+        Cerrar sesión
+      </button>
+    </header>
+
+    <div class="border-t border-[#262626] mt-3 mb-7"></div>
+
+    @if (selectedModule()) {
+      <p
+        role="status"
+        class="mb-5 rounded-lg border border-[#2e2e2e] bg-[#242424] px-4 py-3 text-sm text-[#a3a3a3]"
+      >
+        La sección {{ selectedModule() }} todavía no está disponible. Seguís en el dashboard.
+      </p>
+    }
+
+    <section
+      aria-label="Módulos del Sistema"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    >
+      @for (item of modules(); track item.id) {
+        <button
+          type="button"
+          (click)="selectModule(item)"
+          class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#242424] border border-[#2e2e2e] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#525252]"
+        >
+          <div class="relative z-10 max-w-[85%]">
+            <h2 class="text-lg font-semibold text-[#ededed]">
+              {{ item.title }}
+            </h2>
+            <p class="mt-1.5 text-xs leading-relaxed text-[#8a8a8a]">
+              {{ item.description }}
+            </p>
+          </div>
+
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute -bottom-3 -right-2 text-[#ededed]/[0.05] transition-transform duration-300 group-hover:scale-105"
+          >
+            @switch (item.icon) {
+              @case ('repairs') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.7 19 13.6 9.9a6 6 0 0 0-7.7-7.7l3.5 3.5-2.8 2.8-3.5-3.5a6 6 0 0 0 7.7 7.7l9.1 9.1a2 2 0 0 0 2.8-2.8z" />
+                </svg>
+              }
+              @case ('inventory') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="m12 2 9 5v10l-9 5-9-5V7l9-5zm0 2.3L6 7.6l6 3.3 6-3.3-6-3.3zm-7 5v6.5l6 3.3v-6.5l-6-3.3zm8 9.8 6-3.3V9.3l-6 3.3v6.5z" />
+                </svg>
+              }
+              @case ('customers') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z" />
+                </svg>
+              }
+              @case ('suppliers') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 4h11v11H3V4zm12 4h3l3 4v3h-6V8zm-9 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                </svg>
+              }
+              @case ('sales') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 2h12a2 2 0 0 1 2 2v18l-3-2-3 2-3-2-3 2-3-2V4a2 2 0 0 1 2-2zm2 5v2h8V7H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z" />
+                </svg>
+              }
+              @case ('reports') {
+                <svg class="w-28 h-28" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M4 19h17v2H2V3h2v16zm3-2h3V9H7v8zm5 0h3V5h-3v12zm5 0h3v-6h-3v6z" />
+                </svg>
+              }
+            }
+          </div>
+        </button>
+      }
+    </section>
+  </div>
+</main>
