@@ -18,6 +18,7 @@ describe('Reports', () => {
     sales_count: 2,
     total_revenue: '25000.00',
     average_sale: '12500.00',
+    current_month: '2026-11',
     monthly_sales: [{ month: '2026-11', sales_count: 2, revenue: '25000.00' }],
     top_products: [
       { product_name: 'Cargador USB-C', units_sold: 2, revenue: '25000.00' },

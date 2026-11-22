@@ -1,4 +1,8 @@
+from datetime import date
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -288,9 +292,12 @@ class WorkshopApiTests(APITestCase):
         self.assertEqual(response.data["sales_count"], 3)
         self.assertEqual(response.data["total_revenue"], "750.00")
         self.assertEqual(response.data["average_sale"], "250.00")
-        self.assertEqual(len(response.data["monthly_sales"]), 1)
-        self.assertEqual(response.data["monthly_sales"][0]["sales_count"], 3)
-        self.assertEqual(response.data["monthly_sales"][0]["revenue"], "750.00")
+        self.assertEqual(len(response.data["monthly_sales"]), 6)
+        current_month = timezone.localdate().strftime("%Y-%m")
+        self.assertEqual(response.data["current_month"], current_month)
+        self.assertEqual(response.data["monthly_sales"][-1]["month"], current_month)
+        self.assertEqual(response.data["monthly_sales"][-1]["sales_count"], 3)
+        self.assertEqual(response.data["monthly_sales"][-1]["revenue"], "750.00")
         self.assertEqual(response.data["top_products"][0]["product_name"], "Cargador USB-C")
         self.assertEqual(response.data["top_products"][0]["units_sold"], 7)
         self.assertEqual(response.data["top_products"][0]["revenue"], "700.00")
@@ -307,10 +314,38 @@ class WorkshopApiTests(APITestCase):
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(response.data["sales_count"], 0)
         self.assertEqual(response.data["total_revenue"], "0.00")
-        self.assertEqual(response.data["monthly_sales"], [])
+        current_month = timezone.localdate().strftime("%Y-%m")
+        self.assertEqual(response.data["current_month"], current_month)
+        self.assertEqual(len(response.data["monthly_sales"]), 6)
+        self.assertEqual(
+            response.data["monthly_sales"][-1],
+            {
+                "month": current_month,
+                "sales_count": 0,
+                "revenue": "0.00",
+            },
+        )
         self.assertEqual(response.data["top_products"], [])
         self.assertEqual(response.data["customer_count"], 0)
         self.assertEqual(response.data["supplier_count"], 0)
+
+    @patch("workshop.reporting.timezone.localdate", return_value=date(2027, 1, 15))
+    def test_month_window_crosses_year_boundary(self, _localdate):
+        response = self.client.get(self.reports_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["current_month"], "2027-01")
+        self.assertEqual(
+            [month["month"] for month in response.data["monthly_sales"]],
+            [
+                "2026-08",
+                "2026-09",
+                "2026-10",
+                "2026-11",
+                "2026-12",
+                "2027-01",
+            ],
+        )
 
     def test_workshop_endpoints_require_authentication(self):
         client = APIClient()

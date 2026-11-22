@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
@@ -92,6 +93,22 @@ class AuthenticationApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_login_rate_limits_repeated_failed_attempts(self):
+        cache.clear()
+        self.client.defaults["REMOTE_ADDR"] = "198.51.100.42"
+        credentials = {
+            "email": "nobody@example.com",
+            "password": "TallerSeguro!2026",
+        }
+
+        for _ in range(5):
+            response = self.post_with_csrf(self.login_url, credentials)
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        response = self.post_with_csrf(self.login_url, credentials)
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_current_user_requires_a_valid_access_token(self):
         response = self.client.get("/api/auth/me/")

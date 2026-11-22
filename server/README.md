@@ -74,7 +74,30 @@ caracteres y Django guarda su hash, nunca el valor recibido. Access y refresh
 se envían en cookies `HttpOnly`; las escrituras exigen CSRF. Las respuestas de
 la API usan `Cache-Control: no-store`. El endpoint de refresh rota las cookies y
 logout puede revocar el refresh aunque el access haya vencido.
+El login limita a cinco intentos anónimos por minuto y dirección IP; en
+producción agregá también límites en el proxy o gateway, especialmente si
+desplegás varios procesos.
 
+Un `401` en `/api/auth/login/` indica que no se autenticó ese correo y
+contraseña. Registrá primero la cuenta o verificá que exista y que las
+credenciales sean correctas. Para cambiar la contraseña de una cuenta existente,
+ejecutá desde `server` y escribí la nueva contraseña cuando Django la solicite:
+
+```powershell
+python manage.py changepassword correo@example.com
+```
+
+En una base de datos nueva y vacía, aplicá las migraciones antes de iniciar la
+API:
+
+```powershell
+python manage.py migrate
+```
+
+Si la base ya tiene tablas creadas manualmente desde `database.sql` y Django
+indica migraciones pendientes, no ejecutes `migrate` a ciegas: puede fallar con
+tablas existentes como `auth_user`. Hacé un respaldo y reconciliá el esquema
+con las migraciones antes de continuar; no borres tablas para ocultar el error.
 ## Variables de entorno
 
 `config/settings.py` carga `server/.env` con `python-dotenv`. Las variables ya
@@ -105,6 +128,8 @@ una conexión PostgreSQL sin TLS. No copies el `.env.example` sin modificarlo:
 allí `DEBUG=true`, TLS y HSTS están configurados para desarrollo local. En
 producción usá `DEBUG=false`, `SECURE_SSL_REDIRECT=true`, un
 `SECURE_HSTS_SECONDS` mayor a cero y los hosts/orígenes reales.
+No reutilices contraseñas de desarrollo; si una clave local fue compartida,
+reemplazala y generá secretos Django/JWT nuevos e independientes.
 
 ## Autenticación y esquema
 
@@ -136,7 +161,10 @@ precargados: el usuario carga todos los datos desde las secciones.
 
 El resumen de reportes calcula importes mensuales, productos más vendidos,
 clientes, proveedores, stock e indicadores de reparaciones a partir de las
-filas existentes del usuario. No guarda agregados duplicados en la base.
+filas existentes del usuario. El gráfico incluye los últimos seis meses
+calendario según `TIME_ZONE`, siempre muestra el mes actual aunque no tenga
+ventas y completa esos períodos con cero. No guarda agregados duplicados en la
+base.
 `endpoint.md` contiene el inventario completo de rutas y métodos del MVP.
 
 ## Producción: puntos frágiles

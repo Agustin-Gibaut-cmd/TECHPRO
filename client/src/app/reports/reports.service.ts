@@ -19,6 +19,7 @@ export interface DashboardReport {
   readonly sales_count: number;
   readonly total_revenue: string;
   readonly average_sale: string;
+  readonly current_month: string;
   readonly monthly_sales: MonthlySales[];
   readonly top_products: ProductSales[];
   readonly customer_count: number;

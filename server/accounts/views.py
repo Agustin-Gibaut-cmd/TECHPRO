@@ -11,6 +11,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .authentication import enforce_csrf
+from .throttling import LoginRateThrottle
 from .serializers import (
     LoginSerializer,
     RegisterSerializer,
@@ -86,6 +87,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [LoginRateThrottle]
 
     def get_authenticate_header(self, request: Request) -> str:
         return JWTAuthentication().authenticate_header(request) or "Bearer"

@@ -93,7 +93,9 @@
     <section class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
         <h3 class="font-semibold text-[#ededed]">Ventas por mes</h3>
-        <p class="mt-1 text-xs text-[#8a8a8a]">Importe de los últimos meses con ventas registradas.</p>
+        <p class="mt-1 text-xs text-[#8a8a8a]">
+          Últimos seis meses. Mes actual: {{ formatMonth(summary.current_month) }}; los meses sin ventas muestran $0.
+        </p>
         <svg
           class="mt-5 w-full"
           viewBox="0 0 640 230"
@@ -144,15 +146,18 @@
                 [attr.width]="barWidth(summary.monthly_sales.length)"
                 [attr.height]="barHeight(toNumber(month.revenue), maxMonthlyRevenue)"
                 rx="4"
-                fill="#10b981"
+                [attr.fill]="month.month === summary.current_month ? '#34d399' : '#0f766e'"
               >
-                <title>{{ formatMonth(month.month) }}: {{ month.revenue | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}</title>
+                <title>
+                  {{ formatMonth(month.month) }}{{ month.month === summary.current_month ? ' (mes actual)' : '' }}:
+                  {{ month.revenue | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
+                </title>
               </rect>
               <text
                 [attr.x]="barX($index, summary.monthly_sales.length) + barWidth(summary.monthly_sales.length) / 2"
                 y="207"
                 text-anchor="middle"
-                fill="#a3a3a3"
+                [attr.fill]="month.month === summary.current_month ? '#34d399' : '#a3a3a3'"
                 font-size="11"
               >
                 {{ formatMonth(month.month) }}

@@ -130,6 +130,7 @@ describe('Dashboard', () => {
         sales_count: 0,
         total_revenue: '0.00',
         average_sale: '0.00',
+        current_month: '2026-11',
         monthly_sales: [],
         top_products: [],
         customer_count: 0,
