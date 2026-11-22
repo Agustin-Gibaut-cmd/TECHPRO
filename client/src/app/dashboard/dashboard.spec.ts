@@ -23,9 +23,14 @@ describe('Dashboard', () => {
     expect(component).toBeTruthy();
   });
 
-  it('keeps module options on the dashboard and reports unavailable sections', () => {
-    const moduleButton: HTMLButtonElement =
-      fixture.nativeElement.querySelector('section button');
+  it('keeps unavailable modules on the dashboard', () => {
+    const moduleButton = Array.from(
+      fixture.nativeElement.querySelectorAll('section button')
+    ).find((button) => button.textContent?.includes('Inventario'));
+    if (!(moduleButton instanceof HTMLButtonElement)) {
+      throw new Error('No se encontró el módulo de inventario.');
+    }
+
     const router: Router = TestBed.inject(Router);
     const currentUrl: string = router.url;
 
@@ -33,7 +38,7 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
-      'Reparaciones'
+      'Esta sección todavía no está disponible.'
     );
     expect(router.url).toBe(currentUrl);
   });

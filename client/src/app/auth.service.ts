@@ -98,13 +98,19 @@ export class AuthService {
   }
 
   private postWithCsrf<T>(url: string, body: object): Observable<T> {
-    return this.getCsrfToken().pipe(
-      switchMap((csrfToken) =>
+    return this.getCsrfHeaders().pipe(
+      switchMap((headers) =>
         this.http.post<T>(url, body, {
-          headers: new HttpHeaders({ 'X-CSRFToken': csrfToken }),
+          headers,
           withCredentials: true,
         })
       )
+    );
+  }
+
+  getCsrfHeaders(): Observable<HttpHeaders> {
+    return this.getCsrfToken().pipe(
+      map((csrfToken) => new HttpHeaders({ 'X-CSRFToken': csrfToken }))
     );
   }
 

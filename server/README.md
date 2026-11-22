@@ -1,7 +1,7 @@
 # Backend Django (API-only)
 
-El backend expone solo el API de autenticación y health check; no publica
-`/admin/` ni depende de sesiones de navegador.
+El backend expone el API de autenticación, reparaciones y health check; no
+publica `/admin/` ni depende de sesiones de navegador.
 
 ## Desarrollo local
 
@@ -55,6 +55,9 @@ está en `/api/health/`.
 | `POST` | `/api/auth/token/refresh/` | Rota el refresh token y entrega nuevos tokens. |
 | `GET` | `/api/auth/me/` | Devuelve nombre y email del usuario autenticado. |
 | `POST` | `/api/auth/logout/` | Revoca el refresh token de la sesión autenticada. |
+| `GET` | `/api/repairs/` | Lista las reparaciones creadas por el usuario autenticado. |
+| `POST` | `/api/repairs/` | Registra una reparación para el usuario autenticado. |
+| `PATCH` | `/api/repairs/<id>/` | Actualiza una reparación propia sin modificar su propietario. |
 
 El email se normaliza a minúsculas. Las contraseñas requieren al menos 12
 caracteres y Django guarda su hash, nunca el valor recibido. Access y refresh
@@ -100,9 +103,17 @@ login, usuario actual y logout. JWT dura 15 minutos; el refresh dura 7 días y
 se rota/revoca con la app de blacklist.
 
 `python manage.py migrate` es la fuente de verdad del esquema Django. El
-`database.sql` de la raíz es un esquema reducido de autenticación; no reemplaza
-las migraciones generales ni incluye el registro de migraciones y tablas
-auxiliares de Django.
+`repairs/migrations/0001_initial.py` crea la tabla de reparaciones. Cada cuenta
+solo puede listar sus propias órdenes; el servidor asigna el propietario y no
+acepta ese dato desde el cliente. `database.sql` incluye el esquema manual de
+autenticación y reparaciones, pero no reemplaza las migraciones generales ni
+incluye el registro de migraciones y tablas auxiliares de Django.
+
+La creación y actualización aceptan cliente, teléfono, equipo, modelo y serie,
+descripción de falla y estado (`received`, `diagnosing`, `in_progress`,
+`waiting_parts`, `completed` o `delivered`). La API valida los campos, limita
+las operaciones al propietario y requiere una sesión autenticada y el header
+CSRF.
 
 ## Producción: puntos frágiles
 
@@ -127,5 +138,5 @@ Ejecutá pruebas y comprobaciones desde `server`:
 
 ```powershell
 python manage.py check
-python manage.py test accounts.tests
+python manage.py test accounts.tests repairs.tests
 ```

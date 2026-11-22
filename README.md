@@ -4,10 +4,9 @@ Aplicación con frontend Angular y API Django/PostgreSQL.
 
 ## Componentes
 
-- [Frontend Angular](client/README.md): formularios de login/registro y manejo
-  de tokens.
-- [Backend Django](server/README.md): API REST, validación de contraseñas y JWT.
-- [database.sql](database.sql): esquema SQL reducido de autenticación; para
+- [Frontend Angular](client/README.md): autenticación y módulo de reparaciones.
+- [Backend Django](server/README.md): API REST de autenticación y reparaciones.
+- [database.sql](database.sql): esquema SQL manual; para
   instalar el backend completo se deben usar las migraciones de Django.
 
 ## Seguridad antes de subir a GitHub

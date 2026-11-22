@@ -42,6 +42,10 @@ navegación, pero la autorización real siempre debe quedar en Django. Una
 vulnerabilidad XSS aún podría enviar solicitudes como el usuario; mantené
 sanitización y una política CSP adecuada en el proxy.
 
+La sección **Reparaciones** permite registrar y editar órdenes sin salir de la
+sección. La tabla consulta el API autenticado y muestra únicamente las
+reparaciones de la cuenta activa.
+
 ## Verificación
 
 ```powershell

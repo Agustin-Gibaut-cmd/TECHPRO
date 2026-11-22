@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { Repairs } from '../repairs/repairs';
 
 export interface DashboardModule {
   id: string;
@@ -10,6 +11,7 @@ export interface DashboardModule {
 }
 
 @Component({
+  imports: [Repairs],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
 })
@@ -59,7 +61,7 @@ export class Dashboard {
   ]);
 
   selectModule(module: DashboardModule): void {
-    this.selectedModule.set(module.title);
+    this.selectedModule.set(module.id);
   }
 
   logout(): void {

@@ -21,25 +21,28 @@
 
     <div class="border-t border-[#262626] mt-3 mb-7"></div>
 
-    @if (selectedModule()) {
-      <p
-        role="status"
-        class="mb-5 rounded-lg border border-[#2e2e2e] bg-[#242424] px-4 py-3 text-sm text-[#a3a3a3]"
-      >
-        La sección {{ selectedModule() }} todavía no está disponible. Seguís en el dashboard.
-      </p>
-    }
-
-    <section
-      aria-label="Módulos del Sistema"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-    >
-      @for (item of modules(); track item.id) {
-        <button
-          type="button"
-          (click)="selectModule(item)"
-          class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#242424] border border-[#2e2e2e] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#525252]"
+    @if (selectedModule() === 'repairs') {
+      <app-repairs (back)="selectedModule.set(null)" />
+    } @else {
+      @if (selectedModule()) {
+        <p
+          role="status"
+          class="mb-5 rounded-lg border border-[#2e2e2e] bg-[#242424] px-4 py-3 text-sm text-[#a3a3a3]"
         >
+          Esta sección todavía no está disponible.
+        </p>
+      }
+
+      <section
+        aria-label="Módulos del Sistema"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      >
+        @for (item of modules(); track item.id) {
+          <button
+            type="button"
+            (click)="selectModule(item)"
+            class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#242424] border border-[#2e2e2e] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#525252]"
+          >
           <div class="relative z-10 max-w-[85%]">
             <h2 class="text-lg font-semibold text-[#ededed]">
               {{ item.title }}
@@ -86,8 +89,9 @@
               }
             }
           </div>
-        </button>
-      }
-    </section>
+          </button>
+        }
+      </section>
+    }
   </div>
 </main>

@@ -3,22 +3,27 @@ TECHPRO
 QUE CONTIENE
 
 Frontend Angular con formularios para crear una cuenta e iniciar sesion,
-dashboard protegido, manejo de access y refresh JWT y renderizado SSR con Node.
+dashboard protegido, registro de reparaciones, tabla conectada al servidor,
+manejo de JWT mediante cookies y renderizado SSR con Node.
 
 Backend API-only Django REST Framework conectado a PostgreSQL. Incluye registro,
 login, renovacion y revocacion de tokens, endpoint de usuario actual y health
-check; no expone el admin ni usa sesiones de navegador. Django valida las
-contrasenas y guarda solamente sus hashes.
+check, ademas de endpoints autenticados para reparaciones; no expone el admin
+ni usa sesiones de navegador. Django valida las contrasenas y guarda solamente
+sus hashes.
 
 ARCHIVOS PRINCIPALES
 
 server/accounts/serializers.py valida y normaliza los datos de autenticacion.
 server/accounts/views.py implementa las rutas del API.
+server/repairs/models.py define la tabla de reparaciones.
+server/repairs/views.py lista y crea reparaciones del usuario autenticado.
 server/config/settings.py configura seguridad, base de datos, CORS y JWT.
 client/src/app/auth.service.ts maneja la sesion del frontend.
+client/src/app/repairs/repairs.ts conecta el formulario y la tabla al API.
 client/src/app/auth.interceptor.ts agrega el token y renueva access tokens.
 client/src/server.ts sirve Angular SSR y establece headers de seguridad.
-database.sql contiene el esquema SQL reducido de autenticacion.
+database.sql contiene el esquema SQL manual de autenticacion y reparaciones.
 
 INICIO LOCAL
 
