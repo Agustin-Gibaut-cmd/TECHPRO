@@ -3,7 +3,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { Customers } from '../customers/customers';
 import { Inventory } from '../inventory/inventory';
+import { Reports } from '../reports/reports';
 import { Repairs } from '../repairs/repairs';
+import { Sales } from '../sales/sales';
+import { Suppliers } from '../suppliers/suppliers';
 
 export interface DashboardModule {
   id: string;
@@ -13,7 +16,7 @@ export interface DashboardModule {
 }
 
 @Component({
-  imports: [Customers, Inventory, Repairs],
+  imports: [Customers, Inventory, Reports, Repairs, Sales, Suppliers],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
 })
@@ -39,19 +42,19 @@ export class Dashboard {
     {
       id: 'customers',
       title: 'Clientes',
-      description: 'Contactos, historial de equipos y reparaciones realizadas.',
+      description: 'Alta y mantenimiento de los contactos de tus clientes.',
       icon: 'customers',
     },
     {
       id: 'suppliers',
       title: 'Proveedores',
-      description: 'Gestión de proveedores y pedidos de componentes y repuestos.',
+      description: 'Alta y mantenimiento de los contactos de tus proveedores.',
       icon: 'suppliers',
     },
     {
       id: 'sales',
       title: 'Ventas',
-      description: 'Registro de ventas de equipos, accesorios y servicios técnicos.',
+      description: 'Registro de productos vendidos, clientes e importes.',
       icon: 'sales',
     },
     {

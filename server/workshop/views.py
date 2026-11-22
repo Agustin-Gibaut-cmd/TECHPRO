@@ -7,10 +7,19 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 
-from .models import Customer, InventoryItem
-from .serializers import CustomerSerializer, InventoryItemSerializer
+from .models import Customer, InventoryItem, Sale, Supplier
+from .reporting import get_dashboard_summary
+from .serializers import (
+    CustomerSerializer,
+    InventoryItemSerializer,
+    SaleSerializer,
+    SupplierSerializer,
+)
 
 
 def _save_inventory_item(
@@ -57,6 +66,25 @@ class CustomerDetailView(RetrieveUpdateDestroyAPIView):
         return Customer.objects.filter(created_by=self.request.user)
 
 
+class SupplierListCreateView(ListCreateAPIView):
+    serializer_class = SupplierSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[Supplier]:
+        return Supplier.objects.filter(created_by=self.request.user)
+
+    def perform_create(self, serializer: SupplierSerializer) -> None:
+        serializer.save(created_by=self.request.user)
+
+
+class SupplierDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = SupplierSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[Supplier]:
+        return Supplier.objects.filter(created_by=self.request.user)
+
+
 class InventoryListCreateView(ListCreateAPIView):
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
@@ -77,3 +105,29 @@ class InventoryDetailView(RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer: InventoryItemSerializer) -> None:
         _save_inventory_item(serializer)
+
+
+class SaleListCreateView(ListCreateAPIView):
+    serializer_class = SaleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[Sale]:
+        return Sale.objects.filter(created_by=self.request.user)
+
+    def perform_create(self, serializer: SaleSerializer) -> None:
+        serializer.save(created_by=self.request.user)
+
+
+class SaleDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = SaleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet[Sale]:
+        return Sale.objects.filter(created_by=self.request.user)
+
+
+class ReportSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        return Response(get_dashboard_summary(request.user))

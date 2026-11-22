@@ -115,6 +115,10 @@ export class Customers implements OnInit {
       return;
     }
 
+    this.customerForm.controls.email.setValue(
+      this.customerForm.controls.email.value.trim(),
+      { emitEvent: false }
+    );
     if (this.customerForm.invalid) {
       this.customerForm.markAllAsTouched();
       return;

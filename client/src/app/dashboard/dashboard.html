@@ -27,6 +27,12 @@
       <app-inventory (back)="selectedModule.set(null)" />
     } @else if (selectedModule() === 'customers') {
       <app-customers (back)="selectedModule.set(null)" />
+    } @else if (selectedModule() === 'suppliers') {
+      <app-suppliers (back)="selectedModule.set(null)" />
+    } @else if (selectedModule() === 'sales') {
+      <app-sales (back)="selectedModule.set(null)" />
+    } @else if (selectedModule() === 'reports') {
+      <app-reports (back)="selectedModule.set(null)" />
     } @else {
       @if (selectedModule()) {
         <p

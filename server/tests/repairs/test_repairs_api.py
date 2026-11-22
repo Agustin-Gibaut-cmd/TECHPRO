@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIClient, APITestCase
 
-from .models import Repair
+from repairs.models import Repair
 
 User = get_user_model()
 
@@ -55,9 +55,7 @@ class RepairApiTests(APITestCase):
         self.assertEqual(response.data, [])
 
     def test_repair_endpoints_require_authentication(self):
-        self.client.force_authenticate(user=None)
-
-        response = self.client.get(self.url)
+        response = APIClient().get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 

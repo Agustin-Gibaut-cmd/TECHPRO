@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
 User = get_user_model()
 
@@ -97,6 +98,29 @@ class AuthenticationApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_current_user_is_resolved_from_the_http_only_access_cookie(self):
+        registration = self.post_with_csrf(self.register_url, self.credentials)
+        self.client.cookies["access_token"] = registration.cookies[
+            "access_token"
+        ].value
+
+        response = self.client.get("/api/auth/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {"name": self.credentials["name"], "email": self.credentials["email"]},
+        )
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_refresh_requires_a_valid_refresh_cookie(self):
+        response = self.post_with_csrf("/api/auth/token/refresh/", {})
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertNotIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+
     def test_refresh_rotates_jwt_cookies_without_returning_tokens(self):
         self.post_with_csrf(self.register_url, self.credentials)
 
@@ -109,7 +133,8 @@ class AuthenticationApiTests(APITestCase):
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
 
     def test_logout_revokes_and_clears_cookies_without_an_access_token(self):
-        self.post_with_csrf(self.register_url, self.credentials)
+        registration = self.post_with_csrf(self.register_url, self.credentials)
+        refresh_token = registration.cookies["refresh_token"].value
         self.client.cookies.pop("access_token", None)
 
         response = self.post_with_csrf("/api/auth/logout/", {})
@@ -120,6 +145,9 @@ class AuthenticationApiTests(APITestCase):
         self.assertEqual(response.cookies["access_token"]["max-age"], 0)
         self.assertEqual(response.cookies["refresh_token"]["max-age"], 0)
         self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertTrue(
+            BlacklistedToken.objects.filter(token__token=refresh_token).exists()
+        )
 
     def test_login_rejects_requests_without_csrf_token(self):
         self.client = APIClient(enforce_csrf_checks=True)

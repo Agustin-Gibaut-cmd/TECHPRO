@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
 import { routes } from './app.routes';
 
@@ -26,8 +26,11 @@ describe('App', () => {
 
   it('should render the login page at the root route', async () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/');
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
+    expect(router.url).toBe('/login');
     expect(compiled.querySelector('h1')?.textContent).toContain('Iniciar sesión');
   });
 });

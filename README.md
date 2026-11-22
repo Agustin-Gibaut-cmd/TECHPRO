@@ -1,48 +1,159 @@
-# TECHPRO
+TECHPRO
+Sistema de gestion para talleres de reparacion y servicio tecnico.
 
-Aplicación con frontend Angular y API Django/PostgreSQL.
+DESCRIPCION
 
-## Componentes
+TECHPRO permite administrar reparaciones, clientes, inventario, proveedores y
+ventas desde una aplicacion web. La seccion de reportes calcula indicadores y
+graficos a partir de los registros reales de cada cuenta. El sistema no carga
+datos de ejemplo.
 
-- [Frontend Angular](client/README.md): autenticación, reparaciones, clientes e
-  inventario.
-- [Backend Django](server/README.md): API REST de autenticación y operaciones
-  autenticadas para reparaciones, clientes e inventario.
-- [database.sql](database.sql): esquema SQL manual; para
-  instalar el backend completo se deben usar las migraciones de Django.
+El frontend esta desarrollado con Angular y TypeScript. El backend usa Django,
+Django REST Framework y PostgreSQL. La autenticacion usa JWT en cookies
+HttpOnly; el cliente no guarda tokens en localStorage. Las rutas de escritura
+requieren proteccion CSRF y el servidor limita cada registro a su propietario.
 
-## Seguridad antes de subir a GitHub
+ARQUITECTURA DEL REPOSITORIO
 
-1. Verificá que `server/.env` y cualquier `.env` local estén ignorados:
-   `git check-ignore -v server/.env`.
-2. No agregues claves, contraseñas, tokens, dumps de datos ni certificados
-   privados al repositorio. El `.env.example` usa marcadores intencionales.
-3. Si una credencial real se subió alguna vez, ignorar el archivo no la borra
-   del historial: rotala y limpiá el historial si corresponde.
-4. Nunca pongas secretos en `client/src/environments/`; Angular los publica
-   dentro del bundle.
-5. Antes de producción, configurá las variables reales, `DEBUG=false`, TLS,
-   hosts/orígenes explícitos y una cuenta PostgreSQL de privilegios mínimos.
+client/
+    Aplicacion Angular, pruebas de componentes y servidor de renderizado SSR.
+    client/src/app/auth-form contiene el formulario compartido de acceso y
+    registro.
+    client/src/app/customers administra clientes.
+    client/src/app/dashboard integra las secciones.
+    client/src/app/inventory administra productos y existencias.
+    client/src/app/login maneja inicio de sesion y registro.
+    client/src/app/repairs administra ordenes de reparacion.
+    client/src/app/reports muestra indicadores y graficos.
+    client/src/app/sales administra registros de ventas.
+    client/src/app/suppliers administra proveedores.
+    client/src/environments contiene configuracion publica del API, no secretos.
 
-## Configuración
+server/
+    API Django y configuracion de PostgreSQL, JWT, CSRF, CORS y seguridad.
+    server/accounts contiene registro, login, refresh, logout y autenticacion.
+    server/repairs contiene modelos, validaciones y API de reparaciones.
+    server/workshop contiene clientes, inventario, proveedores, ventas y
+    agregaciones de reportes.
+    server/config contiene settings, rutas y middleware.
+    Las migraciones Django son la fuente oficial del esquema.
 
-El backend usa dotenv para cargar `server/.env`. El frontend no usa dotenv:
-`environment.ts` y `environment.production.ts` son configuración pública de
-Angular y se incluyen al compilar. El servidor SSR de Node recibe `PORT` desde
-el entorno del proceso. Ver las guías de frontend y backend para detalles,
-variables y riesgos conocidos.
+tests/
+    Ejecutor central de comprobaciones y guia de validacion.
+    Las pruebas Angular permanecen junto a sus componentes.
 
-## Validación antes de publicar
+server/tests/
+    Pruebas Django separadas del codigo de produccion y organizadas por dominio:
+    accounts, repairs y workshop.
 
-Desde `server`, ejecutá `python manage.py check` y
-`python manage.py test accounts.tests repairs.tests workshop.tests`. Desde
-`client`, ejecutá `npm test` y `npm run build`. Antes de confirmar cambios,
-revisá `git status --short`, `git diff --check` y verificá que ningún archivo
-local `.env`, base de datos o certificado aparezca entre los archivos seguidos
-por Git.
+database.sql
+    Referencia manual de las tablas principales de la aplicacion.
+    No reemplaza las migraciones Django ni incluye todas las tablas internas
+    auxiliares de Django.
 
-## Capturas
+endpoint.md
+    Inventario de rutas, metodos, modulos y tablas principales del MVP.
 
-<img width="1359" height="631" alt="image" src="https://github.com/user-attachments/assets/6489caf7-41eb-4e6c-b94e-c88e6ccfafb5" />
-<img width="1359" height="633" alt="image" src="https://github.com/user-attachments/assets/0d11bef7-5d64-4395-bc75-da0bbe90e751" />
-<img width="1359" height="626" alt="image" src="https://github.com/user-attachments/assets/797400c7-1e69-4708-a9ee-3ac2028cc866" />
+REQUISITOS
+
+Python 3.10 o posterior, PostgreSQL, Node.js y npm compatibles con las
+versiones indicadas en server/requirements.txt y client/package.json.
+
+INICIO DEL BACKEND
+
+Crear un rol y una base de datos en PostgreSQL. Estos comandos se ejecutan en
+psql como administrador:
+
+    CREATE ROLE workshop WITH LOGIN;
+    \password workshop
+    CREATE DATABASE workshop OWNER workshop;
+
+Desde PowerShell, crear el entorno e instalar dependencias:
+
+    Set-Location .\server
+    py -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install -r requirements.txt
+    Copy-Item .env.example .env
+
+Editar server/.env con las credenciales locales de PostgreSQL. Generar dos
+secretos distintos con este comando y guardarlos en DJANGO_SECRET_KEY y
+JWT_SIGNING_KEY:
+
+    python -c "import secrets; print(secrets.token_urlsafe(64))"
+
+No usar secretos de desarrollo en produccion ni copiar server/.env al
+repositorio. El archivo server/.env.example contiene valores de ejemplo y
+marcadores, no credenciales funcionales.
+
+Aplicar migraciones e iniciar Django:
+
+    python manage.py migrate
+    python manage.py runserver 127.0.0.1:8000
+
+El API local queda en http://127.0.0.1:8000/api/. Su endpoint de salud es
+/api/health/.
+
+INICIO DEL FRONTEND
+
+En una segunda terminal:
+
+    Set-Location .\client
+    npm install
+    npm start
+
+Abrir http://localhost:4200. La configuracion local apunta a
+http://localhost:8000/api. Produccion usa /api en el mismo origen; el proxy
+HTTPS debe reenviar esa ruta al servidor Django.
+
+BASE DE DATOS Y REPORTES
+
+Usar python manage.py migrate para crear y actualizar el esquema. database.sql
+es una referencia manual que se ejecuta conectado a la base ya creada. Los
+reportes se calculan con consultas sobre ventas, inventario, clientes,
+proveedores y reparaciones; no se guarda una tabla de agregados.
+
+Las ventas registran un producto, cantidad y precio unitario. El servidor
+calcula el total. Por ahora una venta no descuenta existencias ni se vincula
+automaticamente a un registro de inventario o cliente.
+
+PRUEBAS Y VALIDACION
+
+Desde la raiz del repositorio, ejecutar:
+
+    .\tests\run-validation.ps1
+
+El ejecutor comprueba la configuracion Django, que no falten migraciones,
+prueba los endpoints, ejecuta las pruebas Angular, genera el build de
+produccion y revisa espacios del diff.
+
+La base PostgreSQL configurada debe estar disponible y el usuario de pruebas
+debe poder crear una base temporal. Las dependencias deben estar instaladas
+antes de ejecutar el script.
+
+La ejecucion manual es:
+
+    En server:
+    python manage.py check
+    python manage.py makemigrations --check --dry-run
+    python manage.py test tests
+
+    En client:
+    npm test -- --watch=false
+    npm run build
+
+SEGURIDAD Y PRODUCCION
+
+No subir archivos .env, contrasenas, tokens, certificados privados, dumps de
+base ni datos personales. Si un secreto se publico alguna vez, rotarlo; dejar
+de seguir el archivo no elimina el secreto del historial de Git.
+
+La configuracion de Angular se incluye en el bundle y no debe contener
+secretos. En produccion configurar DEBUG=false, secretos aleatorios distintos,
+hosts y origenes HTTPS exactos, PostgreSQL con TLS, HTTPS en el proxy y un rol
+de base de datos con privilegios minimos. Habilitar HSTS solo despues de
+verificar HTTPS en todo el dominio. Definir CSP y rate limiting en la
+infraestructura de despliegue.
+
+Para consultar las variables, endpoints y precauciones detalladas, revisar
+server/README.md, client/README.md y endpoint.md.

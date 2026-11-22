@@ -1,7 +1,8 @@
 # Backend Django (API-only)
 
-El backend expone el API de autenticación, reparaciones y health check; no
-publica `/admin/` ni depende de sesiones de navegador.
+El backend expone el API de autenticación, reparaciones, clientes, inventario,
+proveedores, ventas, reportes y health check; no publica `/admin/` ni depende
+de sesiones de navegador.
 
 ## Desarrollo local
 
@@ -57,17 +58,22 @@ está en `/api/health/`.
 | `POST` | `/api/auth/logout/` | Revoca el refresh token disponible y elimina las cookies. |
 | `GET` | `/api/repairs/` | Lista las reparaciones creadas por el usuario autenticado. |
 | `POST` | `/api/repairs/` | Registra una reparación para el usuario autenticado. |
-| `PATCH` | `/api/repairs/<id>/` | Actualiza una reparación propia sin modificar su propietario. |
+| `PUT`, `PATCH` | `/api/repairs/<id>/` | Actualiza una reparación propia sin modificar su propietario. |
 | `GET`, `POST` | `/api/customers/` | Lista o registra clientes de la cuenta autenticada. |
 | `GET`, `PATCH`, `PUT`, `DELETE` | `/api/customers/<id>/` | Consulta, actualiza o elimina un cliente propio. |
+| `GET`, `POST` | `/api/suppliers/` | Lista o registra proveedores de la cuenta autenticada. |
+| `GET`, `PATCH`, `PUT`, `DELETE` | `/api/suppliers/<id>/` | Consulta, actualiza o elimina un proveedor propio. |
 | `GET`, `POST` | `/api/inventory/` | Lista o registra productos de la cuenta autenticada. |
 | `GET`, `PATCH`, `PUT`, `DELETE` | `/api/inventory/<id>/` | Consulta, actualiza o elimina un producto propio. |
+| `GET`, `POST` | `/api/sales/` | Lista o registra ventas propias por producto. |
+| `GET`, `PATCH`, `PUT`, `DELETE` | `/api/sales/<id>/` | Consulta, actualiza o elimina una venta propia. |
+| `GET` | `/api/reports/summary/` | Devuelve métricas agregadas y gráficos basados en los datos propios. |
 
 El email se normaliza a minúsculas. Las contraseñas requieren al menos 12
 caracteres y Django guarda su hash, nunca el valor recibido. Access y refresh
 se envían en cookies `HttpOnly`; las escrituras exigen CSRF. Las respuestas de
-autenticación y CSRF usan `Cache-Control: no-store`. El endpoint de refresh rota
-las cookies y logout puede revocar el refresh aunque el access haya vencido.
+la API usan `Cache-Control: no-store`. El endpoint de refresh rota las cookies y
+logout puede revocar el refresh aunque el access haya vencido.
 
 ## Variables de entorno
 
@@ -108,12 +114,12 @@ login, usuario actual y logout. JWT dura 15 minutos; el refresh dura 7 días y
 se rota/revoca con la app de blacklist.
 
 `python manage.py migrate` es la fuente de verdad del esquema Django. Las
-migraciones crean las tablas de reparaciones, clientes e inventario. Cada cuenta
-solo puede acceder a sus propios registros; el servidor asigna el propietario y
-no acepta ese dato desde el cliente. El SKU es único por cuenta y los valores
-de stock y precio no pueden ser negativos. `database.sql` es una referencia
-manual del esquema; no reemplaza las migraciones ni incluye las tablas
-auxiliares de Django.
+migraciones crean las tablas de reparaciones, clientes, inventario, proveedores
+y ventas. Cada cuenta solo puede acceder a sus propios registros; el servidor
+asigna el propietario y no acepta ese dato desde el cliente. El SKU es único por
+cuenta y los valores de stock, cantidad vendida y precio no pueden ser
+negativos. `database.sql` es una referencia manual del esquema; no reemplaza
+las migraciones ni incluye las tablas auxiliares de Django.
 
 La creación y actualización aceptan cliente, teléfono, equipo, modelo y serie,
 descripción de falla y estado (`received`, `diagnosing`, `in_progress`,
@@ -123,8 +129,15 @@ CSRF.
 
 Clientes incluyen nombre y teléfono obligatorios; correo, domicilio y notas
 son opcionales. Inventario incluye nombre, SKU, cantidad, stock mínimo y precio;
-categorización y descripción son opcionales. Las rutas de ambas secciones
-permiten altas, listados y operaciones individuales autenticadas.
+categorización y descripción son opcionales. Proveedores mantienen datos de
+contacto. Cada venta registra producto, cantidad y precio unitario; el servidor
+calcula el total y no modifica automáticamente el inventario. No hay registros
+precargados: el usuario carga todos los datos desde las secciones.
+
+El resumen de reportes calcula importes mensuales, productos más vendidos,
+clientes, proveedores, stock e indicadores de reparaciones a partir de las
+filas existentes del usuario. No guarda agregados duplicados en la base.
+`endpoint.md` contiene el inventario completo de rutas y métodos del MVP.
 
 ## Producción: puntos frágiles
 
@@ -149,5 +162,8 @@ Ejecutá pruebas y comprobaciones desde `server`:
 
 ```powershell
 python manage.py check
-python manage.py test accounts.tests repairs.tests workshop.tests
+python manage.py test tests
 ```
+
+Las pruebas Django estan separadas en `tests/accounts`, `tests/repairs` y
+`tests/workshop`; cada paquete cubre los endpoints y reglas de su dominio.

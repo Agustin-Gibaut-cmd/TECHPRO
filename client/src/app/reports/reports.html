@@ -1,0 +1,238 @@
+<section class="space-y-6">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold text-[#ededed]">Reportes</h2>
+      <p class="mt-1 text-sm text-[#8a8a8a]">
+        Resumen y gráficos de los datos que cargaste en tu cuenta.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button
+        type="button"
+        (click)="loadReport()"
+        [disabled]="isLoading()"
+        class="rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#c7c7c7] hover:bg-[#242424] disabled:opacity-60"
+      >
+        {{ isLoading() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+      <button
+        type="button"
+        (click)="back.emit()"
+        class="rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#c7c7c7] hover:bg-[#242424]"
+      >
+        Volver al dashboard
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <p role="alert" class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  @if (isLoading() && report() === null) {
+    <p class="rounded-xl border border-[#2e2e2e] bg-[#202020] px-5 py-8 text-center text-sm text-[#8a8a8a]">
+      Cargando reportes…
+    </p>
+  } @else if (report(); as summary) {
+    <section aria-label="Indicadores del taller" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <p class="text-xs uppercase tracking-wide text-[#8a8a8a]">Ventas registradas</p>
+        <p class="mt-2 text-2xl font-semibold text-[#ededed]">{{ summary.sales_count }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <p class="text-xs uppercase tracking-wide text-[#8a8a8a]">Importe total de ventas</p>
+        <p class="mt-2 text-2xl font-semibold text-[#ededed]">
+          {{ summary.total_revenue | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <p class="text-xs uppercase tracking-wide text-[#8a8a8a]">Promedio por registro</p>
+        <p class="mt-2 text-2xl font-semibold text-[#ededed]">
+          {{ summary.average_sale | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <p class="text-xs uppercase tracking-wide text-[#8a8a8a]">Valor del inventario</p>
+        <p class="mt-2 text-2xl font-semibold text-[#ededed]">
+          {{ summary.inventory_value | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
+        </p>
+        <p class="mt-1 text-xs text-[#737373]">Calculado con cantidad × precio unitario.</p>
+      </article>
+    </section>
+
+    <section aria-label="Estado del taller" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Clientes</p>
+        <p class="mt-1 text-xl font-semibold text-[#ededed]">{{ summary.customer_count }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Proveedores</p>
+        <p class="mt-1 text-xl font-semibold text-[#ededed]">{{ summary.supplier_count }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Productos</p>
+        <p class="mt-1 text-xl font-semibold text-[#ededed]">{{ summary.inventory_count }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Unidades en stock</p>
+        <p class="mt-1 text-xl font-semibold text-[#ededed]">{{ summary.inventory_units }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Stock bajo</p>
+        <p class="mt-1 text-xl font-semibold text-amber-300">{{ summary.low_stock_count }}</p>
+      </article>
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-4">
+        <p class="text-xs text-[#8a8a8a]">Reparaciones abiertas</p>
+        <p class="mt-1 text-xl font-semibold text-[#ededed]">{{ summary.open_repair_count }}</p>
+        <p class="mt-1 text-xs text-[#737373]">De {{ summary.repair_count }} en total</p>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <h3 class="font-semibold text-[#ededed]">Ventas por mes</h3>
+        <p class="mt-1 text-xs text-[#8a8a8a]">Importe de los últimos meses con ventas registradas.</p>
+        <svg
+          class="mt-5 w-full"
+          viewBox="0 0 640 230"
+          role="img"
+          aria-label="Gráfico de importe de ventas por mes"
+        >
+          <title>Importe de ventas por mes</title>
+          @if (summary.monthly_sales.length === 0) {
+            <line
+              [attr.x1]="chartLeft"
+              [attr.x2]="chartRight"
+              [attr.y1]="chartBottom"
+              [attr.y2]="chartBottom"
+              stroke="#383838"
+            />
+            <text
+              x="354"
+              y="105"
+              text-anchor="middle"
+              fill="#737373"
+              font-size="13"
+            >
+              Sin ventas para mostrar
+            </text>
+          } @else {
+            @for (guide of chartGuides; track guide) {
+              <line
+                [attr.x1]="chartLeft"
+                [attr.x2]="chartRight"
+                [attr.y1]="chartGuideY(guide)"
+                [attr.y2]="chartGuideY(guide)"
+                stroke="#383838"
+                stroke-dasharray="3 4"
+              />
+              <text
+                x="2"
+                [attr.y]="chartGuideY(guide) + 4"
+                fill="#8a8a8a"
+                font-size="10"
+              >
+                {{ maxMonthlyRevenue * guide | currency: 'ARS' : 'symbol' : '1.0-0' : 'es-AR' }}
+              </text>
+            }
+            @for (month of summary.monthly_sales; track month.month) {
+              <rect
+                [attr.x]="barX($index, summary.monthly_sales.length)"
+                [attr.y]="barY(toNumber(month.revenue), maxMonthlyRevenue)"
+                [attr.width]="barWidth(summary.monthly_sales.length)"
+                [attr.height]="barHeight(toNumber(month.revenue), maxMonthlyRevenue)"
+                rx="4"
+                fill="#10b981"
+              >
+                <title>{{ formatMonth(month.month) }}: {{ month.revenue | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}</title>
+              </rect>
+              <text
+                [attr.x]="barX($index, summary.monthly_sales.length) + barWidth(summary.monthly_sales.length) / 2"
+                y="207"
+                text-anchor="middle"
+                fill="#a3a3a3"
+                font-size="11"
+              >
+                {{ formatMonth(month.month) }}
+              </text>
+            }
+          }
+        </svg>
+      </article>
+
+      <article class="rounded-xl border border-[#2e2e2e] bg-[#202020] p-5">
+        <h3 class="font-semibold text-[#ededed]">Productos más vendidos</h3>
+        <p class="mt-1 text-xs text-[#8a8a8a]">Unidades registradas en las ventas.</p>
+        <svg
+          class="mt-5 w-full"
+          viewBox="0 0 640 250"
+          role="img"
+          aria-label="Gráfico de unidades vendidas por producto"
+        >
+          <title>Unidades vendidas por producto</title>
+          @if (summary.top_products.length === 0) {
+            <line
+              [attr.x1]="chartLeft"
+              [attr.x2]="chartRight"
+              [attr.y1]="chartBottom"
+              [attr.y2]="chartBottom"
+              stroke="#383838"
+            />
+            <text
+              x="354"
+              y="105"
+              text-anchor="middle"
+              fill="#737373"
+              font-size="13"
+            >
+              Sin productos para mostrar
+            </text>
+          } @else {
+            @for (guide of chartGuides; track guide) {
+              <line
+                [attr.x1]="chartLeft"
+                [attr.x2]="chartRight"
+                [attr.y1]="chartGuideY(guide)"
+                [attr.y2]="chartGuideY(guide)"
+                stroke="#383838"
+                stroke-dasharray="3 4"
+              />
+              <text
+                x="22"
+                [attr.y]="chartGuideY(guide) + 4"
+                fill="#8a8a8a"
+                font-size="10"
+              >
+                {{ maxProductUnits * guide | number: '1.0-0' }}
+              </text>
+            }
+            @for (product of summary.top_products; track product.product_name) {
+              <rect
+                [attr.x]="barX($index, summary.top_products.length)"
+                [attr.y]="barY(product.units_sold, maxProductUnits)"
+                [attr.width]="barWidth(summary.top_products.length)"
+                [attr.height]="barHeight(product.units_sold, maxProductUnits)"
+                rx="4"
+                fill="#0ea5e9"
+              >
+                <title>{{ product.product_name }}: {{ product.units_sold }} unidades</title>
+              </rect>
+              <text
+                [attr.x]="barX($index, summary.top_products.length) + barWidth(summary.top_products.length) / 2"
+                y="207"
+                text-anchor="middle"
+                fill="#a3a3a3"
+                font-size="11"
+              >
+                {{ shortProductName(product.product_name) }}
+                <title>{{ product.product_name }}</title>
+              </text>
+            }
+          }
+        </svg>
+      </article>
+    </section>
+  }
+</section>

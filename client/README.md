@@ -42,10 +42,11 @@ navegación, pero la autorización real siempre debe quedar en Django. Una
 vulnerabilidad XSS aún podría enviar solicitudes como el usuario; mantené
 sanitización y una política CSP adecuada en el proxy.
 
-Las secciones **Reparaciones**, **Clientes** e **Inventario** tienen formularios
-y tablas conectadas al API autenticado. Cada usuario solo consulta y modifica
-sus propios registros; el inventario valida SKU único por cuenta y cantidades
-y precios no negativos.
+Las secciones **Reparaciones**, **Clientes**, **Inventario**, **Proveedores** y
+**Ventas** tienen formularios y tablas conectadas al API autenticado. No se
+precargan datos. Cada usuario solo consulta y modifica sus propios registros;
+las ventas calculan el total en el servidor y no alteran automáticamente el
+stock. **Reportes** muestra indicadores y gráficos generados desde el API.
 
 ## Verificación
 
