@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -68,6 +69,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "accounts",
     "repairs",
+    "workshop",
 ]
 
 MIDDLEWARE = [
@@ -161,6 +163,21 @@ if not DEBUG and any(
         "Usá orígenes HTTPS en CORS_ALLOWED_ORIGINS y "
         "CSRF_TRUSTED_ORIGINS en producción."
     )
+if not DEBUG:
+    for origin in CORS_ALLOWED_ORIGINS + CSRF_TRUSTED_ORIGINS:
+        parsed_origin = urlsplit(origin)
+        if (
+            "*" in origin
+            or not parsed_origin.netloc
+            or parsed_origin.path
+            or parsed_origin.query
+            or parsed_origin.fragment
+            or parsed_origin.username
+            or parsed_origin.password
+        ):
+            raise ImproperlyConfigured(
+                "Configurá orígenes HTTPS exactos, sin comodines ni rutas."
+            )
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

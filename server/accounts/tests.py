@@ -19,6 +19,7 @@ class AuthenticationApiTests(APITestCase):
 
     def post_with_csrf(self, url, data):
         csrf_response = self.client.get(self.csrf_url)
+        self.assertEqual(csrf_response["Cache-Control"], "no-store")
         return self.client.post(
             url,
             data,
@@ -36,6 +37,9 @@ class AuthenticationApiTests(APITestCase):
         self.assertNotIn("password", response.data)
         self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
+        self.assertEqual(response.cookies["access_token"]["path"], "/api/")
+        self.assertEqual(response.cookies["refresh_token"]["path"], "/api/auth/")
+        self.assertEqual(response["Cache-Control"], "no-store")
 
         user = User.objects.get(email=self.credentials["email"])
         self.assertTrue(user.check_password(self.credentials["password"]))
@@ -104,8 +108,9 @@ class AuthenticationApiTests(APITestCase):
         self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
 
-    def test_logout_revokes_and_clears_jwt_cookies(self):
+    def test_logout_revokes_and_clears_cookies_without_an_access_token(self):
         self.post_with_csrf(self.register_url, self.credentials)
+        self.client.cookies.pop("access_token", None)
 
         response = self.post_with_csrf("/api/auth/logout/", {})
 
@@ -114,6 +119,7 @@ class AuthenticationApiTests(APITestCase):
         self.assertIn("refresh_token", response.cookies)
         self.assertEqual(response.cookies["access_token"]["max-age"], 0)
         self.assertEqual(response.cookies["refresh_token"]["max-age"], 0)
+        self.assertEqual(response["Cache-Control"], "no-store")
 
     def test_login_rejects_requests_without_csrf_token(self):
         self.client = APIClient(enforce_csrf_checks=True)

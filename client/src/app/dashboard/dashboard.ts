@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { Customers } from '../customers/customers';
+import { Inventory } from '../inventory/inventory';
 import { Repairs } from '../repairs/repairs';
 
 export interface DashboardModule {
@@ -11,7 +13,7 @@ export interface DashboardModule {
 }
 
 @Component({
-  imports: [Repairs],
+  imports: [Customers, Inventory, Repairs],
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
 })

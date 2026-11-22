@@ -50,19 +50,24 @@ está en `/api/health/`.
 | --- | --- | --- |
 | `GET` | `/api/health/` | Confirma que Django responde; no comprueba la base de datos. |
 | `GET` | `/api/auth/csrf/` | Prepara la cookie CSRF y devuelve el valor que el cliente envía en el header. |
-| `POST` | `/api/auth/register/` | Registra nombre, email y contraseña; responde con usuario y JWT. |
-| `POST` | `/api/auth/login/` | Valida email/contraseña y responde con usuario y JWT. |
-| `POST` | `/api/auth/token/refresh/` | Rota el refresh token y entrega nuevos tokens. |
+| `POST` | `/api/auth/register/` | Registra nombre, email y contraseña; establece cookies JWT HttpOnly. |
+| `POST` | `/api/auth/login/` | Valida email/contraseña y establece cookies JWT HttpOnly. |
+| `POST` | `/api/auth/token/refresh/` | Rota cookies JWT HttpOnly sin devolver tokens en el cuerpo. |
 | `GET` | `/api/auth/me/` | Devuelve nombre y email del usuario autenticado. |
-| `POST` | `/api/auth/logout/` | Revoca el refresh token de la sesión autenticada. |
+| `POST` | `/api/auth/logout/` | Revoca el refresh token disponible y elimina las cookies. |
 | `GET` | `/api/repairs/` | Lista las reparaciones creadas por el usuario autenticado. |
 | `POST` | `/api/repairs/` | Registra una reparación para el usuario autenticado. |
 | `PATCH` | `/api/repairs/<id>/` | Actualiza una reparación propia sin modificar su propietario. |
+| `GET`, `POST` | `/api/customers/` | Lista o registra clientes de la cuenta autenticada. |
+| `GET`, `PATCH`, `PUT`, `DELETE` | `/api/customers/<id>/` | Consulta, actualiza o elimina un cliente propio. |
+| `GET`, `POST` | `/api/inventory/` | Lista o registra productos de la cuenta autenticada. |
+| `GET`, `PATCH`, `PUT`, `DELETE` | `/api/inventory/<id>/` | Consulta, actualiza o elimina un producto propio. |
 
 El email se normaliza a minúsculas. Las contraseñas requieren al menos 12
 caracteres y Django guarda su hash, nunca el valor recibido. Access y refresh
-se envían en cookies `HttpOnly`; las escrituras exigen CSRF. El endpoint de
-refresh rota la cookie y logout la revoca.
+se envían en cookies `HttpOnly`; las escrituras exigen CSRF. Las respuestas de
+autenticación y CSRF usan `Cache-Control: no-store`. El endpoint de refresh rota
+las cookies y logout puede revocar el refresh aunque el access haya vencido.
 
 ## Variables de entorno
 
@@ -102,18 +107,24 @@ de contraseña y delega el hash a Django. `accounts/views.py` expone registro,
 login, usuario actual y logout. JWT dura 15 minutos; el refresh dura 7 días y
 se rota/revoca con la app de blacklist.
 
-`python manage.py migrate` es la fuente de verdad del esquema Django. El
-`repairs/migrations/0001_initial.py` crea la tabla de reparaciones. Cada cuenta
-solo puede listar sus propias órdenes; el servidor asigna el propietario y no
-acepta ese dato desde el cliente. `database.sql` incluye el esquema manual de
-autenticación y reparaciones, pero no reemplaza las migraciones generales ni
-incluye el registro de migraciones y tablas auxiliares de Django.
+`python manage.py migrate` es la fuente de verdad del esquema Django. Las
+migraciones crean las tablas de reparaciones, clientes e inventario. Cada cuenta
+solo puede acceder a sus propios registros; el servidor asigna el propietario y
+no acepta ese dato desde el cliente. El SKU es único por cuenta y los valores
+de stock y precio no pueden ser negativos. `database.sql` es una referencia
+manual del esquema; no reemplaza las migraciones ni incluye las tablas
+auxiliares de Django.
 
 La creación y actualización aceptan cliente, teléfono, equipo, modelo y serie,
 descripción de falla y estado (`received`, `diagnosing`, `in_progress`,
 `waiting_parts`, `completed` o `delivered`). La API valida los campos, limita
 las operaciones al propietario y requiere una sesión autenticada y el header
 CSRF.
+
+Clientes incluyen nombre y teléfono obligatorios; correo, domicilio y notas
+son opcionales. Inventario incluye nombre, SKU, cantidad, stock mínimo y precio;
+categorización y descripción son opcionales. Las rutas de ambas secciones
+permiten altas, listados y operaciones individuales autenticadas.
 
 ## Producción: puntos frágiles
 
@@ -138,5 +149,5 @@ Ejecutá pruebas y comprobaciones desde `server`:
 
 ```powershell
 python manage.py check
-python manage.py test accounts.tests repairs.tests
+python manage.py test accounts.tests repairs.tests workshop.tests
 ```

@@ -1,0 +1,280 @@
+<section class="space-y-6">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold text-[#ededed]">Inventario</h2>
+      <p class="mt-1 text-sm text-[#8a8a8a]">
+        Controlá productos, precios, cantidades y niveles mínimos de stock.
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="back.emit()"
+      class="rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#c7c7c7] hover:bg-[#242424]"
+    >
+      Volver al dashboard
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <p
+      role="alert"
+      class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300"
+    >
+      {{ errorMessage() }}
+    </p>
+  }
+  @if (successMessage()) {
+    <p
+      role="status"
+      class="rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300"
+    >
+      {{ successMessage() }}
+    </p>
+  }
+
+  <form
+    #inventoryFormElement
+    [formGroup]="inventoryForm"
+    (ngSubmit)="saveItem()"
+    class="space-y-5 rounded-xl border border-[#2e2e2e] bg-[#202020] p-5 md:p-6"
+    novalidate
+  >
+    <div>
+      <h3 class="text-base font-semibold text-[#ededed]">
+        @if (editingItemId(); as itemId) {
+          Editar producto #{{ itemId }}
+        } @else {
+          Nuevo producto
+        }
+      </h3>
+      <p class="mt-1 text-xs text-[#8a8a8a]">
+        Nombre, SKU y cantidades son obligatorios. El SKU debe ser único en tu inventario.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>Nombre del producto *</span>
+        <input
+          formControlName="name"
+          type="text"
+          maxlength="120"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+        @if (inventoryForm.controls.name.touched && inventoryForm.controls.name.invalid) {
+          <span class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
+        }
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>SKU *</span>
+        <input
+          formControlName="sku"
+          type="text"
+          maxlength="40"
+          autocomplete="off"
+          placeholder="Ej.: CARGADOR-001"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+        @if (inventoryForm.controls.sku.touched && inventoryForm.controls.sku.invalid) {
+          <span class="block text-xs text-red-400">Ingresá un SKU de hasta 40 caracteres.</span>
+        }
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>Categoría</span>
+        <input
+          formControlName="category"
+          type="text"
+          maxlength="80"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>Cantidad disponible *</span>
+        <input
+          formControlName="quantity"
+          type="number"
+          min="0"
+          step="1"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+        @if (inventoryForm.controls.quantity.touched && inventoryForm.controls.quantity.invalid) {
+          <span class="block text-xs text-red-400">Ingresá una cantidad entera igual o mayor a cero.</span>
+        }
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>Stock mínimo *</span>
+        <input
+          formControlName="min_stock"
+          type="number"
+          min="0"
+          step="1"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+        @if (inventoryForm.controls.min_stock.touched && inventoryForm.controls.min_stock.invalid) {
+          <span class="block text-xs text-red-400">Ingresá un valor entero igual o mayor a cero.</span>
+        }
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+        <span>Precio unitario (ARS) *</span>
+        <input
+          formControlName="unit_price"
+          type="number"
+          min="0"
+          step="0.01"
+          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        />
+        @if (inventoryForm.controls.unit_price.touched && inventoryForm.controls.unit_price.invalid) {
+          <span class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
+        }
+      </label>
+
+      <label class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2 lg:col-span-3">
+        <span>Descripción</span>
+        <textarea
+          formControlName="description"
+          rows="3"
+          maxlength="1000"
+          class="w-full resize-y rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="flex justify-end">
+      @if (editingItemId() !== null) {
+        <button
+          type="button"
+          (click)="cancelEdit()"
+          [disabled]="isSaving() || deletingItemId() !== null"
+          class="mr-3 rounded-lg border border-[#383838] px-4 py-2.5 text-sm text-[#c7c7c7] hover:bg-[#292929] disabled:opacity-60"
+        >
+          Cancelar edición
+        </button>
+      }
+      <button
+        type="submit"
+        [disabled]="isSaving() || deletingItemId() !== null"
+        class="rounded-lg bg-[#ededed] px-4 py-2.5 text-sm font-medium text-[#171717] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        @if (isSaving()) {
+          Guardando…
+        } @else if (editingItemId() !== null) {
+          Guardar cambios
+        } @else {
+          Registrar producto
+        }
+      </button>
+    </div>
+  </form>
+
+  <section class="overflow-hidden rounded-xl border border-[#2e2e2e] bg-[#202020]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#2e2e2e] px-5 py-4">
+      <div>
+        <h3 class="font-semibold text-[#ededed]">Productos registrados</h3>
+        <p class="mt-1 text-xs text-[#8a8a8a]">Los datos son privados de tu cuenta.</p>
+      </div>
+      <button
+        type="button"
+        (click)="loadItems()"
+        [disabled]="isLoading()"
+        class="rounded-lg border border-[#383838] px-3 py-2 text-xs text-[#c7c7c7] hover:bg-[#292929] disabled:opacity-60"
+      >
+        {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
+      </button>
+    </div>
+
+    @if (isLoading() && items().length === 0) {
+      <p class="px-5 py-8 text-center text-sm text-[#8a8a8a]">Cargando inventario…</p>
+    } @else if (items().length === 0) {
+      <p class="px-5 py-8 text-center text-sm text-[#8a8a8a]">
+        Todavía no hay productos registrados.
+      </p>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[950px] text-left text-sm">
+          <thead class="bg-[#252525] text-xs uppercase tracking-wide text-[#8a8a8a]">
+            <tr>
+              <th scope="col" class="px-5 py-3">Producto</th>
+              <th scope="col" class="px-5 py-3">SKU</th>
+              <th scope="col" class="px-5 py-3">Categoría</th>
+              <th scope="col" class="px-5 py-3">Stock</th>
+              <th scope="col" class="px-5 py-3">Precio unitario</th>
+              <th scope="col" class="px-5 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#2e2e2e] text-[#c7c7c7]">
+            @for (item of items(); track item.id) {
+              <tr class="align-top hover:bg-[#242424]">
+                <td class="px-5 py-4">
+                  <div class="font-medium text-[#ededed]">{{ item.name }}</div>
+                  @if (item.description) {
+                    <div class="mt-1 max-w-xs whitespace-normal text-xs text-[#8a8a8a]">
+                      {{ item.description }}
+                    </div>
+                  }
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 font-mono text-xs">{{ item.sku }}</td>
+                <td class="px-5 py-4">{{ item.category || '—' }}</td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  <span>{{ item.quantity }}</span>
+                  @if (item.quantity <= item.min_stock) {
+                    <span class="ml-2 rounded-full bg-amber-900/40 px-2 py-1 text-xs text-amber-300">
+                      Stock bajo (mín. {{ item.min_stock }})
+                    </span>
+                  } @else {
+                    <span class="ml-2 text-xs text-[#737373]">Mín. {{ item.min_stock }}</span>
+                  }
+                </td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  {{ item.unit_price | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
+                </td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  @if (pendingDeleteId() === item.id) {
+                    <span class="mr-2 text-xs text-[#c7c7c7]">¿Eliminar?</span>
+                    <button
+                      type="button"
+                      (click)="deleteItem(item)"
+                      [disabled]="isSaving() || deletingItemId() !== null"
+                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                    >
+                      {{ deletingItemId() === item.id ? 'Eliminando…' : 'Confirmar' }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="pendingDeleteId.set(null)"
+                      [disabled]="deletingItemId() !== null"
+                      class="ml-2 rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#c7c7c7] hover:bg-[#303030]"
+                    >
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="editItem(item)"
+                      [disabled]="isSaving() || deletingItemId() !== null"
+                      class="rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#ededed] hover:bg-[#303030] disabled:opacity-50"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      (click)="askToDelete(item.id)"
+                      [disabled]="isSaving() || deletingItemId() !== null"
+                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

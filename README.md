@@ -4,8 +4,10 @@ Aplicación con frontend Angular y API Django/PostgreSQL.
 
 ## Componentes
 
-- [Frontend Angular](client/README.md): autenticación y módulo de reparaciones.
-- [Backend Django](server/README.md): API REST de autenticación y reparaciones.
+- [Frontend Angular](client/README.md): autenticación, reparaciones, clientes e
+  inventario.
+- [Backend Django](server/README.md): API REST de autenticación y operaciones
+  autenticadas para reparaciones, clientes e inventario.
 - [database.sql](database.sql): esquema SQL manual; para
   instalar el backend completo se deben usar las migraciones de Django.
 
@@ -29,6 +31,15 @@ El backend usa dotenv para cargar `server/.env`. El frontend no usa dotenv:
 Angular y se incluyen al compilar. El servidor SSR de Node recibe `PORT` desde
 el entorno del proceso. Ver las guías de frontend y backend para detalles,
 variables y riesgos conocidos.
+
+## Validación antes de publicar
+
+Desde `server`, ejecutá `python manage.py check` y
+`python manage.py test accounts.tests repairs.tests workshop.tests`. Desde
+`client`, ejecutá `npm test` y `npm run build`. Antes de confirmar cambios,
+revisá `git status --short`, `git diff --check` y verificá que ningún archivo
+local `.env`, base de datos o certificado aparezca entre los archivos seguidos
+por Git.
 
 ## Capturas
 

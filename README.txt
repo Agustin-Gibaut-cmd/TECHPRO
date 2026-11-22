@@ -3,14 +3,15 @@ TECHPRO
 QUE CONTIENE
 
 Frontend Angular con formularios para crear una cuenta e iniciar sesion,
-dashboard protegido, registro de reparaciones, tabla conectada al servidor,
-manejo de JWT mediante cookies y renderizado SSR con Node.
+dashboard protegido, secciones de reparaciones, clientes e inventario con
+formularios y tablas conectadas al servidor, manejo de JWT mediante cookies y
+renderizado SSR con Node.
 
 Backend API-only Django REST Framework conectado a PostgreSQL. Incluye registro,
 login, renovacion y revocacion de tokens, endpoint de usuario actual y health
-check, ademas de endpoints autenticados para reparaciones; no expone el admin
-ni usa sesiones de navegador. Django valida las contrasenas y guarda solamente
-sus hashes.
+check, ademas de endpoints autenticados para reparaciones, clientes e inventario;
+no expone el admin ni usa sesiones de navegador. Django valida las contrasenas
+y guarda solamente sus hashes.
 
 ARCHIVOS PRINCIPALES
 
@@ -18,12 +19,17 @@ server/accounts/serializers.py valida y normaliza los datos de autenticacion.
 server/accounts/views.py implementa las rutas del API.
 server/repairs/models.py define la tabla de reparaciones.
 server/repairs/views.py lista y crea reparaciones del usuario autenticado.
+server/workshop/models.py define clientes y productos de inventario.
+server/workshop/views.py ofrece operaciones CRUD privadas por usuario.
 server/config/settings.py configura seguridad, base de datos, CORS y JWT.
 client/src/app/auth.service.ts maneja la sesion del frontend.
 client/src/app/repairs/repairs.ts conecta el formulario y la tabla al API.
-client/src/app/auth.interceptor.ts agrega el token y renueva access tokens.
+client/src/app/customers/customers.ts conecta clientes al API.
+client/src/app/inventory/inventory.ts conecta el inventario al API.
+client/src/app/auth.interceptor.ts envia cookies y renueva la sesion.
 client/src/server.ts sirve Angular SSR y establece headers de seguridad.
-database.sql contiene el esquema SQL manual de autenticacion y reparaciones.
+database.sql contiene el esquema SQL manual de autenticacion, reparaciones,
+clientes e inventario.
 
 INICIO LOCAL
 
@@ -50,6 +56,11 @@ historial de Git.
 Los JWT se transmiten en cookies HttpOnly y no se guardan en localStorage. Las
 operaciones de escritura requieren CSRF. XSS todavia podria actuar dentro de la
 sesion; antes de produccion configura CSP en el proxy y evita HTML no confiable.
+
+Clientes e inventario requieren autenticacion. El servidor asigna el propietario
+de cada registro y solo devuelve, modifica o elimina registros de ese usuario.
+Cada cuenta debe usar un SKU distinto para cada producto; las cantidades y el
+precio unitario no pueden ser negativos.
 
 En produccion usa DEBUG=false, secretos distintos y aleatorios, hosts y
 origenes HTTPS explicitos, PostgreSQL con TLS, HTTPS/HSTS y un usuario de base

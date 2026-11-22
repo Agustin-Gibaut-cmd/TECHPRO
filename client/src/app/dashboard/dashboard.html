@@ -23,6 +23,10 @@
 
     @if (selectedModule() === 'repairs') {
       <app-repairs (back)="selectedModule.set(null)" />
+    } @else if (selectedModule() === 'inventory') {
+      <app-inventory (back)="selectedModule.set(null)" />
+    } @else if (selectedModule() === 'customers') {
+      <app-customers (back)="selectedModule.set(null)" />
     } @else {
       @if (selectedModule()) {
         <p
