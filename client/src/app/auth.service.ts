@@ -1,130 +1,140 @@
 import { isPlatformBrowser } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+} from 'rxjs';
+import { environment } from '../environments/environment';
 
 export interface AuthUser {
   readonly name: string;
   readonly email: string;
 }
 
-interface DemoAccount extends AuthUser {
-  readonly password: string;
+export interface AuthResponse {
+  readonly user: AuthUser;
 }
 
-export type AuthResult =
-  | { readonly success: true; readonly user: AuthUser }
-  | {
-      readonly success: false;
-      readonly reason: 'invalid-credentials' | 'email-already-registered' | 'storage-error';
-    };
-
-const SESSION_STORAGE_KEY = 'currentUser';
-const DEMO_ACCOUNTS: readonly DemoAccount[] = [
-  { name: 'Administrador', email: 'admin@admin.com', password: 'admin123' },
-];
+interface CsrfTokenResponse {
+  readonly csrfToken: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly accounts: DemoAccount[] = [...DEMO_ACCOUNTS];
+  private csrfToken: string | null = null;
+  private csrfRequest: Observable<string> | null = null;
+  private refreshRequest: Observable<void> | null = null;
 
-  readonly currentUser = signal<AuthUser | null>(this.restoreSession());
-  readonly isAuthenticated = computed(() => this.currentUser() !== null);
+  private readonly session = signal<AuthUser | null>(null);
 
-  login(email: string, password: string): AuthResult {
-    const normalizedEmail = email.trim().toLowerCase();
-    const account = this.accounts.find(
-      (candidate) =>
-        (candidate.email === normalizedEmail ||
-          (normalizedEmail === 'admin' && candidate.email === 'admin@admin.com')) &&
-        candidate.password === password
-    );
+  readonly currentUser = computed(() => this.session());
+  readonly isAuthenticated = computed(() => this.session() !== null);
 
-    if (!account) {
-      return { success: false, reason: 'invalid-credentials' };
-    }
-
-    return this.startSession(account);
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.postWithCsrf<AuthResponse>(`${environment.apiUrl}/auth/login/`, {
+      email: email.trim().toLowerCase(),
+      password,
+    }).pipe(tap((response) => this.session.set(response.user)));
   }
 
-  register(name: string, email: string, password: string): AuthResult {
-    const normalizedEmail = email.trim().toLowerCase();
-    const accountExists = this.accounts.some((account) => account.email === normalizedEmail);
-
-    if (accountExists) {
-      return { success: false, reason: 'email-already-registered' };
-    }
-
-    const account: DemoAccount = {
+  register(name: string, email: string, password: string): Observable<AuthResponse> {
+    return this.postWithCsrf<AuthResponse>(`${environment.apiUrl}/auth/register/`, {
       name: name.trim(),
-      email: normalizedEmail,
+      email: email.trim().toLowerCase(),
       password,
-    };
-    const result = this.startSession(account);
+    }).pipe(tap((response) => this.session.set(response.user)));
+  }
 
-    if (result.success) {
-      this.accounts.push(account);
+  loadCurrentUser(): Observable<AuthUser> {
+    return this.http
+      .get<AuthUser>(`${environment.apiUrl}/auth/me/`, { withCredentials: true })
+      .pipe(tap((user) => this.session.set(user)));
+  }
+
+  refreshAccessToken(): Observable<void> {
+    if (!this.refreshRequest) {
+      this.refreshRequest = this.postWithCsrf<void>(
+        `${environment.apiUrl}/auth/token/refresh/`,
+        {}
+      ).pipe(
+        finalize(() => {
+          this.refreshRequest = null;
+        }),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
     }
 
-    return result;
+    return this.refreshRequest;
   }
 
   logout(): void {
-    this.currentUser.set(null);
-
+    this.clearSession();
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
 
-    try {
-      localStorage.removeItem(SESSION_STORAGE_KEY);
-    } catch (error) {
-      console.error('No se pudo eliminar la sesión guardada.', error);
-    }
+    this.postWithCsrf<void>(`${environment.apiUrl}/auth/logout/`, {})
+      .pipe(
+        catchError((error: unknown) => {
+          console.error('No se pudo revocar la sesión en el servidor.', error);
+          return EMPTY;
+        })
+      )
+      .subscribe();
   }
 
-  private startSession(account: AuthUser): AuthResult {
-    const user: AuthUser = { name: account.name, email: account.email };
-
-    if (isPlatformBrowser(this.platformId)) {
-      try {
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
-      } catch (error) {
-        console.error('No se pudo guardar la sesión.', error);
-        return { success: false, reason: 'storage-error' };
-      }
-    }
-
-    this.currentUser.set(user);
-    return { success: true, user };
+  clearSession(): void {
+    this.session.set(null);
   }
 
-  private restoreSession(): AuthUser | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
+  private postWithCsrf<T>(url: string, body: object): Observable<T> {
+    return this.getCsrfToken().pipe(
+      switchMap((csrfToken) =>
+        this.http.post<T>(url, body, {
+          headers: new HttpHeaders({ 'X-CSRFToken': csrfToken }),
+          withCredentials: true,
+        })
+      )
+    );
+  }
+
+  private getCsrfToken(): Observable<string> {
+    if (this.csrfToken) {
+      return of(this.csrfToken);
     }
 
-    try {
-      const session = localStorage.getItem(SESSION_STORAGE_KEY);
-      if (!session) {
-        return null;
-      }
-
-      const user: unknown = JSON.parse(session);
-      if (
-        typeof user === 'object' &&
-        user !== null &&
-        'name' in user &&
-        'email' in user &&
-        typeof user.name === 'string' &&
-        typeof user.email === 'string'
-      ) {
-        return { name: user.name, email: user.email };
-      }
-
-      return null;
-    } catch (error) {
-      console.error('No se pudo restaurar la sesión guardada.', error);
-      return null;
+    if (!this.csrfRequest) {
+      this.csrfRequest = this.http
+        .get<CsrfTokenResponse>(`${environment.apiUrl}/auth/csrf/`, {
+          withCredentials: true,
+        })
+        .pipe(
+          map(({ csrfToken }) => {
+            if (!csrfToken) {
+              throw new Error('El backend no devolvió un token CSRF.');
+            }
+            return csrfToken;
+          }),
+          tap((csrfToken) => {
+            this.csrfToken = csrfToken;
+          }),
+          finalize(() => {
+            this.csrfRequest = null;
+          }),
+          shareReplay({ bufferSize: 1, refCount: false })
+        );
     }
+
+    return this.csrfRequest;
   }
 }

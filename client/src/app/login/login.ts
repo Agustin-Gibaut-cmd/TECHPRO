@@ -1,134 +1,72 @@
-import {
-  Component,
-  ElementRef,
-  ViewChild,
-  WritableSignal,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  ValidatorFn,
-  Validators,
-} from '@angular/forms';
+import { Component, WritableSignal, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { AuthResult, AuthService } from '../auth.service';
-
-interface AuthFormControls {
-  name: FormControl<string>;
-  email: FormControl<string>;
-  password: FormControl<string>;
-  confirmPassword: FormControl<string>;
-}
-
-const passwordsMatchValidator: ValidatorFn = (
-  control: AbstractControl
-): ValidationErrors | null => {
-  const password: string = control.get('password')?.value ?? '';
-  const confirmPassword: string = control.get('confirmPassword')?.value ?? '';
-
-  if (confirmPassword.length === 0) {
-    return null;
-  }
-
-  return password === confirmPassword ? null : { passwordMismatch: true };
-};
+import { finalize } from 'rxjs';
+import { AuthCredentials, AuthForm } from '../auth-form/auth-form';
+import { AuthService } from '../auth.service';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [AuthForm],
   selector: 'app-login',
   templateUrl: './login.html',
 })
 export class Login {
-  private readonly fb: FormBuilder = inject(FormBuilder);
   private readonly router: Router = inject(Router);
   private readonly authService: AuthService = inject(AuthService);
 
-  @ViewChild('firstInput') private readonly firstInput?: ElementRef<HTMLInputElement>;
-
   readonly isRegisterMode: WritableSignal<boolean> = signal<boolean>(false);
-  readonly showPassword: WritableSignal<boolean> = signal<boolean>(false);
-  readonly showConfirmPassword: WritableSignal<boolean> = signal<boolean>(false);
+  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
   readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
-
-  readonly authForm: FormGroup<AuthFormControls> = this.fb.nonNullable.group<AuthFormControls>(
-    {
-      name: this.fb.nonNullable.control<string>(''),
-      email: this.fb.nonNullable.control<string>('', [Validators.required]),
-      password: this.fb.nonNullable.control<string>('', [
-        Validators.required,
-        Validators.minLength(6),
-      ]),
-      confirmPassword: this.fb.nonNullable.control<string>(''),
-    },
-    { validators: passwordsMatchValidator }
-  );
 
   toggleMode(): void {
     this.isRegisterMode.update((value: boolean): boolean => !value);
     this.errorMessage.set(null);
-    this.showPassword.set(false);
-    this.showConfirmPassword.set(false);
-
-    const nameControl: FormControl<string> = this.authForm.controls.name;
-    const emailControl: FormControl<string> = this.authForm.controls.email;
-    const confirmControl: FormControl<string> = this.authForm.controls.confirmPassword;
-
-    if (this.isRegisterMode()) {
-      nameControl.setValidators([Validators.required, Validators.minLength(2)]);
-      emailControl.setValidators([Validators.required, Validators.email]);
-      confirmControl.setValidators([Validators.required]);
-    } else {
-      nameControl.clearValidators();
-      nameControl.reset();
-      emailControl.setValidators([Validators.required]);
-      confirmControl.clearValidators();
-      confirmControl.reset();
-    }
-
-    nameControl.updateValueAndValidity();
-    emailControl.updateValueAndValidity();
-    confirmControl.updateValueAndValidity();
-
-    setTimeout((): void => {
-      this.firstInput?.nativeElement.focus();
-    }, 50);
   }
 
-  onSubmit(): void {
-    if (this.authForm.invalid) {
-      this.authForm.markAllAsTouched();
+  onSubmit(credentials: AuthCredentials): void {
+    if (this.isLoading()) {
       return;
     }
 
     this.errorMessage.set(null);
+    this.isLoading.set(true);
 
-    const { name, email, password } = this.authForm.getRawValue();
-    const result: AuthResult = this.isRegisterMode()
-      ? this.authService.register(name, email, password)
-      : this.authService.login(email, password);
+    const request = this.isRegisterMode()
+      ? this.authService.register(credentials.name, credentials.email, credentials.password)
+      : this.authService.login(credentials.email, credentials.password);
 
-    if (!result.success) {
-      this.errorMessage.set(this.getErrorMessage(result.reason));
-      return;
-    }
-
-    void this.router.navigate(['/dashboard']);
+    request
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: () => void this.router.navigate(['/dashboard']),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+      });
   }
 
-  private getErrorMessage(reason: Extract<AuthResult, { success: false }>['reason']): string {
-    switch (reason) {
-      case 'email-already-registered':
-        return 'Ese correo ya está registrado.';
-      case 'storage-error':
-        return 'No se pudo guardar la sesión. Revisá el almacenamiento del navegador.';
-      case 'invalid-credentials':
-        return 'Usuario o contraseña incorrectos.';
+  private getErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'No se pudo completar la solicitud.';
     }
+
+    if (error.status === 0) {
+      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
+    }
+
+    if (typeof error.error === 'object' && error.error !== null) {
+      for (const value of Object.values(error.error)) {
+        if (typeof value === 'string') {
+          return value;
+        }
+
+        if (Array.isArray(value)) {
+          const message = value.find((item: unknown): item is string => typeof item === 'string');
+          if (message) {
+            return message;
+          }
+        }
+      }
+    }
+
+    return 'No se pudo completar la operación. Revisá los datos e intentá nuevamente.';
   }
 }

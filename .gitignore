@@ -36,6 +36,13 @@ db.sqlite3-journal
 media/
 staticfiles/
 *.log
+*.dump
+*.backup
+*.sql.gz
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Local environment variables and secrets
 .env
