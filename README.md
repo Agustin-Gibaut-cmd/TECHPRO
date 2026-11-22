@@ -1,159 +1,111 @@
-TECHPRO
-Sistema de gestion para talleres de reparacion y servicio tecnico.
+# TECHPRO
 
-DESCRIPCION
+**Sistema de gestión para talleres de reparación y servicio técnico.**
 
-TECHPRO permite administrar reparaciones, clientes, inventario, proveedores y
-ventas desde una aplicacion web. La seccion de reportes calcula indicadores y
-graficos a partir de los registros reales de cada cuenta. El sistema no carga
-datos de ejemplo.
+## Descripción
 
-El frontend esta desarrollado con Angular y TypeScript. El backend usa Django,
-Django REST Framework y PostgreSQL. La autenticacion usa JWT en cookies
-HttpOnly; el cliente no guarda tokens en localStorage. Las rutas de escritura
-requieren proteccion CSRF y el servidor limita cada registro a su propietario.
+TECHPRO es una aplicación web diseñada para centralizar y simplificar la gestión de talleres de reparación y servicio técnico. Permite administrar clientes, órdenes de reparación, inventario, proveedores, ventas y consultar reportes con indicadores y gráficos basados en los datos registrados.
 
-ARQUITECTURA DEL REPOSITORIO
+## Tecnologías
 
-client/
-    Aplicacion Angular, pruebas de componentes y servidor de renderizado SSR.
-    client/src/app/auth-form contiene el formulario compartido de acceso y
-    registro.
-    client/src/app/customers administra clientes.
-    client/src/app/dashboard integra las secciones.
-    client/src/app/inventory administra productos y existencias.
-    client/src/app/login maneja inicio de sesion y registro.
-    client/src/app/repairs administra ordenes de reparacion.
-    client/src/app/reports muestra indicadores y graficos.
-    client/src/app/sales administra registros de ventas.
-    client/src/app/suppliers administra proveedores.
-    client/src/environments contiene configuracion publica del API, no secretos.
+- **Frontend:** Angular y TypeScript.
+- **Backend:** Python, Django y Django REST Framework.
+- **Base de datos:** PostgreSQL.
+- **Autenticación:** JWT mediante cookies HttpOnly.
 
-server/
-    API Django y configuracion de PostgreSQL, JWT, CSRF, CORS y seguridad.
-    server/accounts contiene registro, login, refresh, logout y autenticacion.
-    server/repairs contiene modelos, validaciones y API de reparaciones.
-    server/workshop contiene clientes, inventario, proveedores, ventas y
-    agregaciones de reportes.
-    server/config contiene settings, rutas y middleware.
-    Las migraciones Django son la fuente oficial del esquema.
+## Estructura del repositorio
 
-tests/
-    Ejecutor central de comprobaciones y guia de validacion.
-    Las pruebas Angular permanecen junto a sus componentes.
+```text
+TECHPRO/
+│
+├── client/
+│   └── src/app/
+│       ├── auth-form/   # Acceso y registro
+│       ├── customers/   # Clientes
+│       ├── dashboard/  # Panel principal
+│       ├── inventory/  # Inventario
+│       ├── login/      # Inicio de sesión
+│       ├── repairs/    # Reparaciones
+│       ├── reports/    # Reportes y estadísticas
+│       ├── sales/      # Ventas
+│       └── suppliers/  # Proveedores
+│
+├── server/
+│   ├── accounts/       # Autenticación y usuarios
+│   ├── repairs/        # API de reparaciones
+│   ├── workshop/       # Módulos de gestión
+│   ├── config/         # Configuración de Django
+│   ├── tests/          # Pruebas del backend
+│   └── requirements.txt
+│
+├── tests/              # Validaciones generales
+├── database.sql        # Referencia de tablas
+├── endpoint.md         # Documentación de endpoints
+└── README.md
+```
 
-server/tests/
-    Pruebas Django separadas del codigo de produccion y organizadas por dominio:
-    accounts, repairs y workshop.
+## Requisitos
 
-database.sql
-    Referencia manual de las tablas principales de la aplicacion.
-    No reemplaza las migraciones Django ni incluye todas las tablas internas
-    auxiliares de Django.
+- Python 3.10 o superior.
+- PostgreSQL.
+- Node.js y npm.
 
-endpoint.md
-    Inventario de rutas, metodos, modulos y tablas principales del MVP.
+## Cómo levantar el proyecto
 
-REQUISITOS
+### 1. Clonar el repositorio
 
-Python 3.10 o posterior, PostgreSQL, Node.js y npm compatibles con las
-versiones indicadas en server/requirements.txt y client/package.json.
+```bash
+git clone URL_DEL_REPOSITORIO
+cd TECHPRO
+```
 
-INICIO DEL BACKEND
+### 2. Iniciar el backend
 
-Crear un rol y una base de datos en PostgreSQL. Estos comandos se ejecutan en
-psql como administrador:
+Desde una terminal:
 
-    CREATE ROLE workshop WITH LOGIN;
-    \password workshop
-    CREATE DATABASE workshop OWNER workshop;
+```powershell
+cd server
 
-Desde PowerShell, crear el entorno e instalar dependencias:
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-    Set-Location .\server
-    py -m venv .venv
-    .\.venv\Scripts\Activate.ps1
-    python -m pip install -r requirements.txt
-    Copy-Item .env.example .env
+python -m pip install -r requirements.txt
 
-Editar server/.env con las credenciales locales de PostgreSQL. Generar dos
-secretos distintos con este comando y guardarlos en DJANGO_SECRET_KEY y
-JWT_SIGNING_KEY:
+Copy-Item .env.example .env
+```
 
-    python -c "import secrets; print(secrets.token_urlsafe(64))"
+Configurar las variables de entorno y las credenciales de PostgreSQL en `server/.env`.
 
-No usar secretos de desarrollo en produccion ni copiar server/.env al
-repositorio. El archivo server/.env.example contiene valores de ejemplo y
-marcadores, no credenciales funcionales.
+Generar dos claves secretas diferentes:
 
-Aplicar migraciones e iniciar Django:
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
 
-    python manage.py migrate
-    python manage.py runserver 127.0.0.1:8000
+Configurar una en `DJANGO_SECRET_KEY` y otra en `JWT_SIGNING_KEY`.
 
-El API local queda en http://127.0.0.1:8000/api/. Su endpoint de salud es
-/api/health/.
+Aplicar las migraciones e iniciar el servidor:
 
-INICIO DEL FRONTEND
+```powershell
+python manage.py migrate
+python manage.py runserver 127.0.0.1:8000
+```
 
-En una segunda terminal:
+Backend: http://127.0.0.1:8000/api/
 
-    Set-Location .\client
-    npm install
-    npm start
+### 3. Iniciar el frontend
 
-Abrir http://localhost:4200. La configuracion local apunta a
-http://localhost:8000/api. Produccion usa /api en el mismo origen; el proxy
-HTTPS debe reenviar esa ruta al servidor Django.
+Abrir una segunda terminal:
 
-BASE DE DATOS Y REPORTES
+```powershell
+cd client
 
-Usar python manage.py migrate para crear y actualizar el esquema. database.sql
-es una referencia manual que se ejecuta conectado a la base ya creada. Los
-reportes se calculan con consultas sobre ventas, inventario, clientes,
-proveedores y reparaciones; no se guarda una tabla de agregados.
+npm install
+npm start
+```
 
-Las ventas registran un producto, cantidad y precio unitario. El servidor
-calcula el total. Por ahora una venta no descuenta existencias ni se vincula
-automaticamente a un registro de inventario o cliente.
+Frontend: http://localhost:4200
 
-PRUEBAS Y VALIDACION
+---
 
-Desde la raiz del repositorio, ejecutar:
-
-    .\tests\run-validation.ps1
-
-El ejecutor comprueba la configuracion Django, que no falten migraciones,
-prueba los endpoints, ejecuta las pruebas Angular, genera el build de
-produccion y revisa espacios del diff.
-
-La base PostgreSQL configurada debe estar disponible y el usuario de pruebas
-debe poder crear una base temporal. Las dependencias deben estar instaladas
-antes de ejecutar el script.
-
-La ejecucion manual es:
-
-    En server:
-    python manage.py check
-    python manage.py makemigrations --check --dry-run
-    python manage.py test tests
-
-    En client:
-    npm test -- --watch=false
-    npm run build
-
-SEGURIDAD Y PRODUCCION
-
-No subir archivos .env, contrasenas, tokens, certificados privados, dumps de
-base ni datos personales. Si un secreto se publico alguna vez, rotarlo; dejar
-de seguir el archivo no elimina el secreto del historial de Git.
-
-La configuracion de Angular se incluye en el bundle y no debe contener
-secretos. En produccion configurar DEBUG=false, secretos aleatorios distintos,
-hosts y origenes HTTPS exactos, PostgreSQL con TLS, HTTPS en el proxy y un rol
-de base de datos con privilegios minimos. Habilitar HSTS solo despues de
-verificar HTTPS en todo el dominio. Definir CSP y rate limiting en la
-infraestructura de despliegue.
-
-Para consultar las variables, endpoints y precauciones detalladas, revisar
-server/README.md, client/README.md y endpoint.md.
+**TECHPRO** — Gestión integral para talleres de reparación y servicio técnico.
