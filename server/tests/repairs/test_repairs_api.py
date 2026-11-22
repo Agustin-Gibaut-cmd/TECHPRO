@@ -98,3 +98,24 @@ class RepairApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_owner_can_delete_a_repair(self):
+        repair = Repair.objects.create(created_by=self.user, **self.payload)
+
+        response = self.client.delete(f"{self.url}{repair.pk}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Repair.objects.filter(pk=repair.pk).exists())
+
+    def test_user_cannot_delete_another_users_repair(self):
+        other_user = User.objects.create_user(
+            username="otro@example.com",
+            email="otro@example.com",
+            password="TallerSeguro!2026",
+        )
+        repair = Repair.objects.create(created_by=other_user, **self.payload)
+
+        response = self.client.delete(f"{self.url}{repair.pk}/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Repair.objects.filter(pk=repair.pk).exists())

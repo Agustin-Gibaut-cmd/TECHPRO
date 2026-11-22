@@ -68,4 +68,15 @@ export class RepairsService {
       )
     );
   }
+
+  delete(id: number): Observable<void> {
+    return this.authService.getCsrfHeaders().pipe(
+      switchMap((headers) =>
+        this.http.delete<void>(`${REPAIRS_URL}${id}/`, {
+          headers,
+          withCredentials: true,
+        })
+      )
+    );
+  }
 }

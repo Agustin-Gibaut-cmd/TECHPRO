@@ -107,4 +107,25 @@ describe('Repairs', () => {
     expect(component.repairs()).toEqual([updatedRepair]);
     expect(component.successMessage()).toContain('actualizó');
   });
+
+  it('deletes a repair after confirmation and removes it from the table', () => {
+    component.repairs.set([repair]);
+    component.askToDelete(repair.id);
+
+    component.deleteRepair(repair);
+
+    const csrfRequest = httpMock.expectOne(`${environment.apiUrl}/auth/csrf/`);
+    expect(csrfRequest.request.method).toBe('GET');
+    csrfRequest.flush({ csrfToken: 'csrf-token' });
+
+    const request = httpMock.expectOne(`${url}${repair.id}/`);
+    expect(request.request.method).toBe('DELETE');
+    expect(request.request.withCredentials).toBe(true);
+    expect(request.request.headers.get('X-CSRFToken')).toBe('csrf-token');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(component.repairs()).toEqual([]);
+    expect(component.pendingDeleteId()).toBeNull();
+    expect(component.successMessage()).toContain('eliminó');
+  });
 });

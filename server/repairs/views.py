@@ -1,5 +1,5 @@
 from django.db.models import QuerySet
-from rest_framework.generics import ListCreateAPIView, UpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Repair
@@ -17,7 +17,7 @@ class RepairListCreateView(ListCreateAPIView):
         serializer.save(created_by=self.request.user)
 
 
-class RepairUpdateView(UpdateAPIView):
+class RepairUpdateView(RetrieveUpdateDestroyAPIView):
     serializer_class = RepairSerializer
     permission_classes = [IsAuthenticated]
 

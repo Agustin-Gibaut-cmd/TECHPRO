@@ -225,15 +225,43 @@
                 <td class="whitespace-nowrap px-5 py-4 text-xs text-[#8a8a8a]">
                   {{ repair.created_at | date: 'dd/MM/yyyy HH:mm' }}
                 </td>
-                <td class="px-5 py-4">
-                  <button
-                    type="button"
-                    (click)="editRepair(repair)"
-                    [disabled]="isSaving() || editingRepairId() === repair.id"
-                    class="rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#ededed] hover:bg-[#303030] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {{ editingRepairId() === repair.id ? 'Editando' : 'Editar' }}
-                  </button>
+                <td class="whitespace-nowrap px-5 py-4">
+                  @if (pendingDeleteId() === repair.id) {
+                    <span class="mr-2 text-xs text-[#c7c7c7]">¿Eliminar?</span>
+                    <button
+                      type="button"
+                      (click)="deleteRepair(repair)"
+                      [disabled]="isSaving() || deletingRepairId() !== null"
+                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                    >
+                      {{ deletingRepairId() === repair.id ? 'Eliminando…' : 'Confirmar' }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="pendingDeleteId.set(null)"
+                      [disabled]="deletingRepairId() !== null"
+                      class="ml-2 rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#c7c7c7] hover:bg-[#303030]"
+                    >
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="editRepair(repair)"
+                      [disabled]="isSaving() || deletingRepairId() !== null || editingRepairId() === repair.id"
+                      class="rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#ededed] hover:bg-[#303030] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {{ editingRepairId() === repair.id ? 'Editando' : 'Editar' }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="askToDelete(repair.id)"
+                      [disabled]="isSaving() || deletingRepairId() !== null"
+                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                  }
                 </td>
               </tr>
             }

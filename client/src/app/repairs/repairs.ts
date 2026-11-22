@@ -49,6 +49,8 @@ export class Repairs implements OnInit {
 
   readonly repairs = signal<RepairRecord[]>([]);
   readonly editingRepairId = signal<number | null>(null);
+  readonly pendingDeleteId = signal<number | null>(null);
+  readonly deletingRepairId = signal<number | null>(null);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -100,6 +102,7 @@ export class Repairs implements OnInit {
   editRepair(repair: RepairRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
+    this.pendingDeleteId.set(null);
     this.editingRepairId.set(repair.id);
     this.repairForm.setValue({
       customer_name: repair.customer_name,
@@ -124,7 +127,7 @@ export class Repairs implements OnInit {
   }
 
   saveRepair(): void {
-    if (this.isSaving()) {
+    if (this.isSaving() || this.deletingRepairId() !== null) {
       return;
     }
 
@@ -168,6 +171,45 @@ export class Repairs implements OnInit {
       });
   }
 
+  askToDelete(repairId: number): void {
+    this.pendingDeleteId.update((pendingId) =>
+      pendingId === repairId ? null : repairId
+    );
+    this.errorMessage.set(null);
+  }
+
+  deleteRepair(repair: RepairRecord): void {
+    if (this.isSaving() || this.deletingRepairId() !== null) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.deletingRepairId.set(repair.id);
+
+    this.repairsService
+      .delete(repair.id)
+      .pipe(finalize(() => this.deletingRepairId.set(null)))
+      .subscribe({
+        next: () => {
+          this.repairs.update((repairs) =>
+            repairs.filter((item) => item.id !== repair.id)
+          );
+          if (this.editingRepairId() === repair.id) {
+            this.cancelEdit();
+          }
+          this.pendingDeleteId.set(null);
+          this.successMessage.set('La reparación se eliminó correctamente.');
+        },
+        error: (error: unknown) =>
+          this.errorMessage.set(
+            this.getErrorMessage(
+              error,
+              'No se pudo eliminar la reparación. Intentá nuevamente.'
+            )
+          ),
+      });
+  }
+
   private emptyFormValue(): RepairPayload {
     return {
       customer_name: '',
@@ -180,7 +222,10 @@ export class Repairs implements OnInit {
     };
   }
 
-  private getErrorMessage(error: unknown): string {
+  private getErrorMessage(
+    error: unknown,
+    fallback = 'No se pudo guardar la reparación. Revisá los datos e intentá nuevamente.'
+  ): string {
     if (!(error instanceof HttpErrorResponse)) {
       return 'No se pudo completar la solicitud.';
     }
@@ -208,6 +253,6 @@ export class Repairs implements OnInit {
       }
     }
 
-    return 'No se pudo guardar la reparación. Revisá los datos e intentá nuevamente.';
+    return fallback;
   }
 }
