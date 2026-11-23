@@ -1,3 +1,9 @@
+"""Enrutamiento de endpoints para el módulo de reparaciones.
+
+Define las URLs para listar/crear reparaciones (`/`) y consultar, modificar o
+eliminar una reparación por su identificador (`/<id>/`).
+"""
+
 from django.urls import path
 
 from .views import RepairListCreateView, RepairUpdateView

@@ -1,5 +1,4 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -9,6 +8,7 @@ import {
   ViewChild,
   inject,
   signal,
+  WritableSignal,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -18,45 +18,49 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { extractErrorMessage } from '../error.utils';
 import { SalePayload, SaleRecord, SalesService } from './sales.service';
 
 interface SaleFormControls {
-  customer_name: FormControl<string>;
-  product_name: FormControl<string>;
-  quantity: FormControl<number | null>;
-  unit_price: FormControl<number | null>;
+  readonly customer_name: FormControl<string>;
+  readonly product_name: FormControl<string>;
+  readonly quantity: FormControl<number | null>;
+  readonly unit_price: FormControl<number | null>;
 }
 
 interface SaleFormValue {
-  customer_name: string;
-  product_name: string;
-  quantity: number | null;
-  unit_price: number | null;
+  readonly customer_name: string;
+  readonly product_name: string;
+  readonly quantity: number | null;
+  readonly unit_price: number | null;
 }
 
+/**
+ * Componente para el registro, consulta y anulación de ventas del taller.
+ */
 @Component({
   imports: [CurrencyPipe, DatePipe, ReactiveFormsModule],
   selector: 'app-sales',
   templateUrl: './sales.html',
 })
 export class Sales implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly salesService = inject(SalesService);
+  private readonly fb: FormBuilder = inject(FormBuilder);
+  private readonly salesService: SalesService = inject(SalesService);
 
   @Output() readonly back = new EventEmitter<void>();
   @ViewChild('saleFormElement')
   private readonly saleFormElement?: ElementRef<HTMLElement>;
 
-  readonly sales = signal<SaleRecord[]>([]);
-  readonly editingSaleId = signal<number | null>(null);
-  readonly pendingDeleteId = signal<number | null>(null);
-  readonly deletingSaleId = signal<number | null>(null);
-  readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
+  readonly sales: WritableSignal<SaleRecord[]> = signal<SaleRecord[]>([]);
+  readonly editingSaleId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly pendingDeleteId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly deletingSaleId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
+  readonly isSaving: WritableSignal<boolean> = signal<boolean>(false);
+  readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
+  readonly successMessage: WritableSignal<string | null> = signal<string | null>(null);
 
-  readonly saleForm: FormGroup<SaleFormControls> = this.fb.group({
+  readonly saleForm: FormGroup<SaleFormControls> = this.fb.group<SaleFormControls>({
     customer_name: this.fb.nonNullable.control('', Validators.maxLength(120)),
     product_name: this.fb.nonNullable.control('', [
       Validators.required,
@@ -66,7 +70,7 @@ export class Sales implements OnInit {
     quantity: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(1),
-      Validators.max(2147483647),
+      Validators.max(2_147_483_647),
       Validators.pattern(/^[1-9]\d*$/),
     ]),
     unit_price: this.fb.control<number | null>(null, [
@@ -80,6 +84,7 @@ export class Sales implements OnInit {
     this.loadSales();
   }
 
+  /** Carga la lista cronológica de ventas desde la API. */
   loadSales(): void {
     this.errorMessage.set(null);
     this.isLoading.set(true);
@@ -88,11 +93,12 @@ export class Sales implements OnInit {
       .list()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (sales) => this.sales.set(sales),
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        next: (items: SaleRecord[]) => this.sales.set(items),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Rellena el formulario con la venta a editar. */
   editSale(sale: SaleRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -110,6 +116,7 @@ export class Sales implements OnInit {
     });
   }
 
+  /** Cancela la edición activa. */
   cancelEdit(): void {
     this.editingSaleId.set(null);
     this.saleForm.reset(this.emptyFormValue());
@@ -117,6 +124,7 @@ export class Sales implements OnInit {
     this.successMessage.set(null);
   }
 
+  /** Calcula la previsualización del importe total en tiempo real. */
   previewTotal(): number | null {
     const { quantity, unit_price } = this.saleForm.getRawValue();
     return quantity !== null && unit_price !== null && quantity > 0 && unit_price >= 0
@@ -124,6 +132,7 @@ export class Sales implements OnInit {
       : null;
   }
 
+  /** Guarda la venta en el servidor. */
   saveSale(): void {
     if (this.isSaving() || this.deletingSaleId() !== null) {
       return;
@@ -159,11 +168,11 @@ export class Sales implements OnInit {
     request
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (sale) => {
-          this.sales.update((sales) =>
+        next: (sale: SaleRecord) => {
+          this.sales.update((items: SaleRecord[]) =>
             editingId === null
-              ? [sale, ...sales]
-              : sales.map((item) => (item.id === sale.id ? sale : item))
+              ? [sale, ...items]
+              : items.map((item: SaleRecord) => (item.id === sale.id ? sale : item))
           );
           this.editingSaleId.set(null);
           this.saleForm.reset(this.emptyFormValue());
@@ -173,17 +182,17 @@ export class Sales implements OnInit {
               : 'La venta se actualizó correctamente.'
           );
         },
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Solicita confirmación para eliminar una venta. */
   askToDelete(saleId: number): void {
-    this.pendingDeleteId.update((pendingId) =>
-      pendingId === saleId ? null : saleId
-    );
+    this.pendingDeleteId.update((id: number | null) => (id === saleId ? null : saleId));
     this.errorMessage.set(null);
   }
 
+  /** Elimina el registro de venta seleccionado. */
   deleteSale(sale: SaleRecord): void {
     if (this.isSaving() || this.deletingSaleId() !== null) {
       return;
@@ -197,14 +206,14 @@ export class Sales implements OnInit {
       .pipe(finalize(() => this.deletingSaleId.set(null)))
       .subscribe({
         next: () => {
-          this.sales.update((sales) => sales.filter((item) => item.id !== sale.id));
+          this.sales.update((items: SaleRecord[]) => items.filter((item: SaleRecord) => item.id !== sale.id));
           if (this.editingSaleId() === sale.id) {
             this.cancelEdit();
           }
           this.pendingDeleteId.set(null);
           this.successMessage.set('La venta se eliminó correctamente.');
         },
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
@@ -215,31 +224,5 @@ export class Sales implements OnInit {
       quantity: null,
       unit_price: null,
     };
-  }
-
-  private getErrorMessage(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return 'No se pudo completar la solicitud.';
-    }
-    if (error.status === 0) {
-      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
-    }
-    if (error.status === 401) {
-      return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
-    }
-    if (typeof error.error === 'object' && error.error !== null) {
-      for (const value of Object.values(error.error)) {
-        if (typeof value === 'string') {
-          return value;
-        }
-        if (Array.isArray(value)) {
-          const message = value.find((item: unknown): item is string => typeof item === 'string');
-          if (message) {
-            return message;
-          }
-        }
-      }
-    }
-    return 'No se pudo guardar la venta. Revisá los datos e intentá nuevamente.';
   }
 }

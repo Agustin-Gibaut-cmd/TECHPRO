@@ -1,3 +1,5 @@
+"""Migración inicial: creación de los modelos Customer e InventoryItem."""
+
 import django.core.validators
 import django.db.models.deletion
 from decimal import Decimal

@@ -1,5 +1,4 @@
 import { CurrencyPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -9,6 +8,7 @@ import {
   ViewChild,
   inject,
   signal,
+  WritableSignal,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -18,6 +18,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { extractErrorMessage } from '../error.utils';
 import {
   InventoryPayload,
   InventoryRecord,
@@ -25,69 +26,55 @@ import {
 } from './inventory.service';
 
 interface InventoryFormControls {
-  name: FormControl<string>;
-  sku: FormControl<string>;
-  category: FormControl<string>;
-  description: FormControl<string>;
-  quantity: FormControl<number>;
-  min_stock: FormControl<number>;
-  unit_price: FormControl<number>;
+  readonly name: FormControl<string>;
+  readonly sku: FormControl<string>;
+  readonly category: FormControl<string>;
+  readonly description: FormControl<string>;
+  readonly quantity: FormControl<number>;
+  readonly min_stock: FormControl<number>;
+  readonly unit_price: FormControl<number>;
 }
 
+/**
+ * Componente para el control de inventario, existencias y precios del taller.
+ */
 @Component({
   imports: [CurrencyPipe, ReactiveFormsModule],
   selector: 'app-inventory',
   templateUrl: './inventory.html',
 })
 export class Inventory implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly inventoryService = inject(InventoryService);
+  private readonly fb: FormBuilder = inject(FormBuilder);
+  private readonly inventoryService: InventoryService = inject(InventoryService);
 
   @Output() readonly back = new EventEmitter<void>();
   @ViewChild('inventoryFormElement')
   private readonly inventoryFormElement?: ElementRef<HTMLElement>;
 
-  readonly items = signal<InventoryRecord[]>([]);
-  readonly editingItemId = signal<number | null>(null);
-  readonly pendingDeleteId = signal<number | null>(null);
-  readonly deletingItemId = signal<number | null>(null);
-  readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
+  readonly items: WritableSignal<InventoryRecord[]> = signal<InventoryRecord[]>([]);
+  readonly editingItemId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly pendingDeleteId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly deletingItemId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
+  readonly isSaving: WritableSignal<boolean> = signal<boolean>(false);
+  readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
+  readonly successMessage: WritableSignal<string | null> = signal<string | null>(null);
 
-  readonly inventoryForm: FormGroup<InventoryFormControls> = this.fb.nonNullable.group({
-    name: [
-      '',
-      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)],
-    ],
-    sku: [
-      '',
-      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)],
-    ],
-    category: ['', [Validators.maxLength(80)]],
-    description: ['', [Validators.maxLength(1000)]],
-    quantity: this.fb.nonNullable.control(0, [
-      Validators.required,
-      Validators.min(0),
-      Validators.pattern(/^\d+$/),
-    ]),
-    min_stock: this.fb.nonNullable.control(0, [
-      Validators.required,
-      Validators.min(0),
-      Validators.pattern(/^\d+$/),
-    ]),
-    unit_price: this.fb.nonNullable.control(0, [
-      Validators.required,
-      Validators.min(0),
-      Validators.pattern(/^\d+(\.\d{1,2})?$/),
-    ]),
+  readonly inventoryForm: FormGroup<InventoryFormControls> = this.fb.nonNullable.group<InventoryFormControls>({
+    name: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)]),
+    sku: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)]),
+    category: this.fb.nonNullable.control('', [Validators.maxLength(80)]),
+    description: this.fb.nonNullable.control('', [Validators.maxLength(1000)]),
+    quantity: this.fb.nonNullable.control(0, [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/)]),
+    min_stock: this.fb.nonNullable.control(0, [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/)]),
+    unit_price: this.fb.nonNullable.control(0, [Validators.required, Validators.min(0), Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
   });
 
   ngOnInit(): void {
     this.loadItems();
   }
 
+  /** Carga la lista completa de artículos en stock. */
   loadItems(): void {
     this.errorMessage.set(null);
     this.isLoading.set(true);
@@ -96,11 +83,12 @@ export class Inventory implements OnInit {
       .list()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (items) => this.items.set(items),
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        next: (items: InventoryRecord[]) => this.items.set(items),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Carga los datos de un artículo para su edición. */
   editItem(item: InventoryRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -121,6 +109,7 @@ export class Inventory implements OnInit {
     });
   }
 
+  /** Cancela la edición y reinicia los valores del formulario. */
   cancelEdit(): void {
     this.editingItemId.set(null);
     this.inventoryForm.reset(this.emptyFormValue());
@@ -128,6 +117,7 @@ export class Inventory implements OnInit {
     this.successMessage.set(null);
   }
 
+  /** Registra un nuevo producto o actualiza el existente en inventario. */
   saveItem(): void {
     if (this.isSaving() || this.deletingItemId() !== null) {
       return;
@@ -159,10 +149,10 @@ export class Inventory implements OnInit {
     request
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (item) => {
-          this.items.update((items) =>
-            [...items.filter((current) => current.id !== item.id), item].sort(
-              (left, right) => left.name.localeCompare(right.name)
+        next: (item: InventoryRecord) => {
+          this.items.update((current: InventoryRecord[]) =>
+            [...current.filter((it: InventoryRecord) => it.id !== item.id), item].sort(
+              (a: InventoryRecord, b: InventoryRecord) => a.name.localeCompare(b.name)
             )
           );
           this.editingItemId.set(null);
@@ -173,15 +163,17 @@ export class Inventory implements OnInit {
               : 'El producto se actualizó correctamente.'
           );
         },
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Muestra u oculta la confirmación de borrado. */
   askToDelete(itemId: number): void {
-    this.pendingDeleteId.update((pendingId) => (pendingId === itemId ? null : itemId));
+    this.pendingDeleteId.update((id: number | null) => (id === itemId ? null : itemId));
     this.errorMessage.set(null);
   }
 
+  /** Elimina el artículo del inventario. */
   deleteItem(item: InventoryRecord): void {
     if (this.isSaving() || this.deletingItemId() !== null) {
       return;
@@ -195,14 +187,14 @@ export class Inventory implements OnInit {
       .pipe(finalize(() => this.deletingItemId.set(null)))
       .subscribe({
         next: () => {
-          this.items.update((items) => items.filter((current) => current.id !== item.id));
+          this.items.update((current: InventoryRecord[]) => current.filter((it: InventoryRecord) => it.id !== item.id));
           if (this.editingItemId() === item.id) {
             this.cancelEdit();
           }
           this.pendingDeleteId.set(null);
           this.successMessage.set('El producto se eliminó correctamente.');
         },
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
@@ -216,31 +208,5 @@ export class Inventory implements OnInit {
       min_stock: 0,
       unit_price: 0,
     };
-  }
-
-  private getErrorMessage(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return 'No se pudo completar la solicitud.';
-    }
-    if (error.status === 0) {
-      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
-    }
-    if (error.status === 401) {
-      return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
-    }
-    if (typeof error.error === 'object' && error.error !== null) {
-      for (const value of Object.values(error.error)) {
-        if (typeof value === 'string') {
-          return value;
-        }
-        if (Array.isArray(value)) {
-          const message = value.find((item: unknown): item is string => typeof item === 'string');
-          if (message) {
-            return message;
-          }
-        }
-      }
-    }
-    return 'No se pudo guardar el producto. Revisá los datos e intentá nuevamente.';
   }
 }

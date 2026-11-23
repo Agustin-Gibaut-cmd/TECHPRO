@@ -1,3 +1,14 @@
+"""Rutas de autenticación y sesión de usuario.
+
+Contiene los endpoints necesarios para el flujo de autorización:
+- `csrf/`: Emisión del token anti-CSRF para formularios y llamadas seguras.
+- `register/`: Creación de nuevas cuentas.
+- `login/`: Autenticación con credenciales y seteo de cookies HttpOnly.
+- `token/refresh/`: Rotación y renovación transparente de tokens JWT.
+- `me/`: Consulta de la identidad del usuario actualmente autenticado.
+- `logout/`: Invalidación de tokens y eliminación de cookies de sesión.
+"""
+
 from django.urls import path
 
 from .views import (
