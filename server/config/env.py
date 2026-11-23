@@ -1,12 +1,13 @@
 """Gestión centralizada y segura de variables de entorno para TECHPRO."""
 
+from datetime import timedelta
+from ipaddress import ip_address
 import os
 from pathlib import Path
+import secrets
 from urllib.parse import urlsplit
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
-
-MIN_SECRET_LENGTH = 50
 
 
 def init_environment(base_dir: Path) -> None:
@@ -43,22 +44,31 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 
 def load_secret_keys() -> tuple[str, str]:
+    min_len = env_int("MIN_SECRET_LENGTH", len(secrets.token_urlsafe()))
     secret_key, jwt_key = env_str("DJANGO_SECRET_KEY"), env_str("JWT_SIGNING_KEY")
     for name, val in (("DJANGO_SECRET_KEY", secret_key), ("JWT_SIGNING_KEY", jwt_key)):
-        if not val or val.startswith("replace-with-") or len(val) < MIN_SECRET_LENGTH:
-            raise ImproperlyConfigured(f"Definí {name} en server/.env con al menos {MIN_SECRET_LENGTH} caracteres.")
+        if not val or val.startswith("replace-with-") or len(val) < min_len:
+            raise ImproperlyConfigured(f"Definí {name} en server/.env con al menos {min_len} caracteres.")
     if jwt_key == secret_key:
         raise ImproperlyConfigured("JWT_SIGNING_KEY debe ser distinto de DJANGO_SECRET_KEY.")
     return secret_key, jwt_key
 
 
+def _is_local_host(hostname: str | None) -> bool:
+    if not hostname or hostname == "localhost":
+        return True
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
 def _validate_origin(origin: str) -> None:
-    lower = origin.lower()
-    if lower.startswith(("http://localhost", "http://127.0.0.1")):
-        raise ImproperlyConfigured("Quitá orígenes locales de CORS/CSRF en producción.")
-    if not lower.startswith("https://"):
-        raise ImproperlyConfigured("Usá orígenes HTTPS en CORS/CSRF en producción.")
     p = urlsplit(origin)
+    if _is_local_host(p.hostname):
+        raise ImproperlyConfigured("Quitá orígenes locales de CORS/CSRF en producción.")
+    if p.scheme.lower() != "https":
+        raise ImproperlyConfigured("Usá orígenes HTTPS en CORS/CSRF en producción.")
     if "*" in origin or not p.netloc or any((p.path, p.query, p.fragment, p.username, p.password)):
         raise ImproperlyConfigured("Configurá orígenes HTTPS exactos, sin comodines ni rutas.")
 
@@ -87,5 +97,8 @@ def validate_production_settings(
         raise ImproperlyConfigured("Activá SECURE_SSL_REDIRECT en producción.")
     if hsts_seconds <= 0:
         raise ImproperlyConfigured("Configurá SECURE_HSTS_SECONDS mayor a cero en producción.")
-    if hsts_preload and (not hsts_subdomains or hsts_seconds < 31536000):
-        raise ImproperlyConfigured("HSTS preload requiere subdominios y al menos 1 año de HSTS.")
+
+    one_year = int(timedelta(days=365).total_seconds())
+    min_hsts = env_int("MIN_HSTS_PRELOAD_SECONDS", one_year)
+    if hsts_preload and (not hsts_subdomains or hsts_seconds < min_hsts):
+        raise ImproperlyConfigured(f"HSTS preload requiere subdominios y al menos {min_hsts} segundos de HSTS.")
