@@ -1,9 +1,3 @@
-"""Punto de entrada ASGI para servidores asíncronos (Uvicorn, Daphne).
-
-Permite atender peticiones asíncronas y WebSocket si la infraestructura
-lo requiere en el futuro.
-"""
-
 import os
 
 from django.core.asgi import get_asgi_application

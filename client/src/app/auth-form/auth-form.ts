@@ -9,7 +9,6 @@ import {
   ViewChild,
   inject,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -29,27 +28,25 @@ export interface AuthCredentials {
 }
 
 interface AuthFormControls {
-  readonly name: FormControl<string>;
-  readonly email: FormControl<string>;
-  readonly password: FormControl<string>;
-  readonly confirmPassword: FormControl<string>;
+  name: FormControl<string>;
+  email: FormControl<string>;
+  password: FormControl<string>;
+  confirmPassword: FormControl<string>;
 }
 
-/** Validador cruzado para verificar que la contraseña y su confirmación coincidan exactamente. */
 const passwordsMatchValidator: ValidatorFn = (
   control: AbstractControl
 ): ValidationErrors | null => {
-  const password = control.get('password')?.value ?? '';
-  const confirmPassword = control.get('confirmPassword')?.value ?? '';
-  if (!confirmPassword) {
+  const password: string = control.get('password')?.value ?? '';
+  const confirmPassword: string = control.get('confirmPassword')?.value ?? '';
+
+  if (confirmPassword.length === 0) {
     return null;
   }
+
   return password === confirmPassword ? null : { passwordMismatch: true };
 };
 
-/**
- * Formulario reutilizable para inicio de sesión y registro de cuentas con validación reactiva.
- */
 @Component({
   imports: [ReactiveFormsModule],
   selector: 'app-auth-form',
@@ -61,13 +58,12 @@ export class AuthForm implements OnChanges {
   @Input() registerMode = false;
   @Input() isLoading = false;
   @Input() errorMessage: string | null = null;
-  @Output() readonly submitted = new EventEmitter<AuthCredentials>();
-  @Output() readonly modeToggle = new EventEmitter<void>();
+  @Output() submitted = new EventEmitter<AuthCredentials>();
+  @Output() modeToggle = new EventEmitter<void>();
   @ViewChild('firstInput') private readonly firstInput?: ElementRef<HTMLInputElement>;
 
-  readonly showPassword: WritableSignal<boolean> = signal<boolean>(false);
-  readonly showConfirmPassword: WritableSignal<boolean> = signal<boolean>(false);
-
+  readonly showPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
   readonly authForm: FormGroup<AuthFormControls> = this.fb.nonNullable.group<AuthFormControls>(
     {
       name: this.fb.nonNullable.control(''),
@@ -99,16 +95,15 @@ export class AuthForm implements OnChanges {
       confirmPassword.reset();
     }
 
-    Object.values(this.authForm.controls).forEach((ctrl: FormControl<string>) => {
-      ctrl.updateValueAndValidity();
+    Object.values(this.authForm.controls).forEach((control) => {
+      control.updateValueAndValidity();
     });
-
     this.showPassword.set(false);
     this.showConfirmPassword.set(false);
+
     setTimeout(() => this.firstInput?.nativeElement.focus(), 50);
   }
 
-  /** Valida el formulario y emite las credenciales en caso de éxito. */
   onSubmit(): void {
     if (this.isLoading) {
       return;

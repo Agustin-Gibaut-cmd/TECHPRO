@@ -1,55 +1,46 @@
 import {
   HttpContextToken,
   HttpErrorResponse,
-  HttpEvent,
-  HttpHandlerFn,
   HttpInterceptorFn,
-  HttpRequest,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, Observable, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AuthService } from './auth.service';
 
 const AUTH_RETRIED = new HttpContextToken<boolean>(() => false);
 
-/**
- * Interceptor HTTP que adjunta credenciales y renueva tokens expirados ante errores 401.
- */
-export const authInterceptor: HttpInterceptorFn = (
-  request: HttpRequest<unknown>,
-  next: HttpHandlerFn
-): Observable<HttpEvent<unknown>> => {
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const isApi = isApiRequestUrl(request.url);
-  const isAuth = isAuthenticationEndpoint(request.url);
+  const isApiRequest = isApiRequestUrl(request.url);
+  const isAuthEndpoint = isAuthenticationEndpoint(request.url);
 
-  const cookieRequest = isApi
+  const cookieRequest = isApiRequest
     ? request.clone({ withCredentials: true })
     : request;
 
   return next(cookieRequest).pipe(
-    catchError((err: unknown) => {
+    catchError((error: unknown) => {
       if (
-        !(err instanceof HttpErrorResponse) ||
-        err.status !== 401 ||
-        !isApi ||
-        isAuth ||
+        !(error instanceof HttpErrorResponse) ||
+        error.status !== 401 ||
+        !isApiRequest ||
+        isAuthEndpoint ||
         request.context.get(AUTH_RETRIED)
       ) {
-        return throwError(() => err);
+        return throwError(() => error);
       }
 
       return authService.refreshAccessToken().pipe(
         switchMap(() =>
           next(cookieRequest.clone({ context: request.context.set(AUTH_RETRIED, true) }))
         ),
-        catchError((refreshErr: unknown) => {
+        catchError((refreshError: unknown) => {
           authService.clearSession();
           void router.navigate(['/login']);
-          return throwError(() => refreshErr);
+          return throwError(() => refreshError);
         })
       );
     })

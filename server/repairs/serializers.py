@@ -1,17 +1,9 @@
-"""Serializadores para órdenes de reparación.
-
-Mapea la entidad Repair hacia JSON y valida los campos requeridos para el
-alta y modificación de servicios técnicos.
-"""
-
 from rest_framework import serializers
 
 from .models import Repair
 
 
 class RepairSerializer(serializers.ModelSerializer):
-    """Serializador para operaciones de lectura y escritura de reparaciones."""
-
     class Meta:
         model = Repair
         fields = (

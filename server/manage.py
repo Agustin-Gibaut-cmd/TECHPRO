@@ -1,20 +1,17 @@
 #!/usr/bin/env python
-"""Utilidad de línea de comandos de Django para tareas administrativas en TECHPRO."""
-
 import os
 import sys
 
 
 def main() -> None:
-    """Configura el entorno de ejecución y despacha comandos administrativos de Django."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
     try:
         from django.core.management import execute_from_command_line
     except ImportError as error:
         raise ImportError(
-            "No se pudo importar Django. Asegurate de activar el entorno virtual "
-            "e instalar las dependencias con `python -m pip install -r requirements.txt`."
+            "No se pudo importar Django. Instalá las dependencias con "
+            "`python -m pip install -r requirements.txt`."
         ) from error
 
     execute_from_command_line(sys.argv)

@@ -1,29 +1,9 @@
-"""Modelos de datos para la gestión y seguimiento de reparaciones técnicas.
-
-Permite registrar equipos recibidos en el taller, diagnosticar problemas,
-asociar repuestos y dar seguimiento al ciclo completo de servicio hasta la
-entrega al cliente.
-"""
-
 from django.conf import settings
 from django.db import models
 
-# Constantes de longitud máxima para consistencia en la base de datos
-CUSTOMER_NAME_MAX_LENGTH = 120
-CUSTOMER_PHONE_MAX_LENGTH = 32
-DEVICE_TYPE_MAX_LENGTH = 80
-DEVICE_MODEL_MAX_LENGTH = 100
-SERIAL_NUMBER_MAX_LENGTH = 100
-ISSUE_DESCRIPTION_MAX_LENGTH = 2000
-STATUS_MAX_LENGTH = 20
-
 
 class Repair(models.Model):
-    """Representa una orden de servicio técnico para un dispositivo específico."""
-
     class Status(models.TextChoices):
-        """Estados por los que transita un equipo durante su reparación."""
-
         RECEIVED = "received", "Recibido"
         DIAGNOSING = "diagnosing", "En diagnóstico"
         IN_PROGRESS = "in_progress", "En reparación"
@@ -31,14 +11,14 @@ class Repair(models.Model):
         COMPLETED = "completed", "Listo"
         DELIVERED = "delivered", "Entregado"
 
-    customer_name = models.CharField(max_length=CUSTOMER_NAME_MAX_LENGTH)
-    customer_phone = models.CharField(max_length=CUSTOMER_PHONE_MAX_LENGTH)
-    device_type = models.CharField(max_length=DEVICE_TYPE_MAX_LENGTH)
-    device_model = models.CharField(max_length=DEVICE_MODEL_MAX_LENGTH, blank=True)
-    serial_number = models.CharField(max_length=SERIAL_NUMBER_MAX_LENGTH, blank=True)
-    issue_description = models.TextField(max_length=ISSUE_DESCRIPTION_MAX_LENGTH)
+    customer_name = models.CharField(max_length=120)
+    customer_phone = models.CharField(max_length=32)
+    device_type = models.CharField(max_length=80)
+    device_model = models.CharField(max_length=100, blank=True)
+    serial_number = models.CharField(max_length=100, blank=True)
+    issue_description = models.TextField(max_length=2000)
     status = models.CharField(
-        max_length=STATUS_MAX_LENGTH,
+        max_length=20,
         choices=Status.choices,
         default=Status.RECEIVED,
     )

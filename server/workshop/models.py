@@ -1,43 +1,16 @@
-"""Modelos de datos para la gestión comercial y operativa del taller.
-
-Engloba las entidades esenciales para la operación diaria:
-- `Customer`: Directorio de clientes con datos de contacto.
-- `Supplier`: Proveedores de repuestos e insumos.
-- `InventoryItem`: Control de stock, repuestos, precios y niveles mínimos.
-- `Sale`: Registro de ventas directas de productos o accesorios.
-"""
-
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
-# Límites de longitud de campos
-CONTACT_NAME_MAX_LENGTH = 120
-PHONE_MAX_LENGTH = 32
-EMAIL_MAX_LENGTH = 254
-ADDRESS_MAX_LENGTH = 200
-NOTES_MAX_LENGTH = 1000
-
-SKU_MAX_LENGTH = 40
-CATEGORY_MAX_LENGTH = 80
-DESCRIPTION_MAX_LENGTH = 1000
-PRODUCT_NAME_MAX_LENGTH = 120
-
-PRICE_MAX_DIGITS = 10
-PRICE_DECIMAL_PLACES = 2
-MIN_MONEY_VALUE = Decimal("0.00")
-
 
 class Customer(models.Model):
-    """Cliente del taller al que se le asocian órdenes de servicio y ventas."""
-
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    phone = models.CharField(max_length=PHONE_MAX_LENGTH)
-    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True)
-    address = models.CharField(max_length=ADDRESS_MAX_LENGTH, blank=True)
-    notes = models.TextField(max_length=NOTES_MAX_LENGTH, blank=True)
+    name = models.CharField(max_length=120)
+    phone = models.CharField(max_length=32)
+    email = models.EmailField(max_length=254, blank=True)
+    address = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(max_length=1000, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -60,13 +33,11 @@ class Customer(models.Model):
 
 
 class Supplier(models.Model):
-    """Proveedor comercial que suministra repuestos y consumibles para el taller."""
-
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    phone = models.CharField(max_length=PHONE_MAX_LENGTH)
-    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True)
-    address = models.CharField(max_length=ADDRESS_MAX_LENGTH, blank=True)
-    notes = models.TextField(max_length=NOTES_MAX_LENGTH, blank=True)
+    name = models.CharField(max_length=120)
+    phone = models.CharField(max_length=32)
+    email = models.EmailField(max_length=254, blank=True)
+    address = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(max_length=1000, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -89,19 +60,17 @@ class Supplier(models.Model):
 
 
 class InventoryItem(models.Model):
-    """Artículo o repuesto del inventario con seguimiento de existencias y precio."""
-
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    sku = models.CharField(max_length=SKU_MAX_LENGTH)
-    category = models.CharField(max_length=CATEGORY_MAX_LENGTH, blank=True)
-    description = models.TextField(max_length=DESCRIPTION_MAX_LENGTH, blank=True)
+    name = models.CharField(max_length=120)
+    sku = models.CharField(max_length=40)
+    category = models.CharField(max_length=80, blank=True)
+    description = models.TextField(max_length=1000, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     min_stock = models.PositiveIntegerField(default=0)
     unit_price = models.DecimalField(
-        max_digits=PRICE_MAX_DIGITS,
-        decimal_places=PRICE_DECIMAL_PLACES,
-        default=MIN_MONEY_VALUE,
-        validators=[MinValueValidator(MIN_MONEY_VALUE)],
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -135,15 +104,13 @@ class InventoryItem(models.Model):
 
 
 class Sale(models.Model):
-    """Transacción de venta de productos o insumos realizada por el taller."""
-
-    customer_name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH, blank=True)
-    product_name = models.CharField(max_length=PRODUCT_NAME_MAX_LENGTH)
+    customer_name = models.CharField(max_length=120, blank=True)
+    product_name = models.CharField(max_length=120)
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(
-        max_digits=PRICE_MAX_DIGITS,
-        decimal_places=PRICE_DECIMAL_PLACES,
-        validators=[MinValueValidator(MIN_MONEY_VALUE)],
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -174,7 +141,6 @@ class Sale(models.Model):
 
     @property
     def total(self) -> Decimal:
-        """Calcula el importe total de la venta multiplicando precio unitario y cantidad."""
         return self.unit_price * self.quantity
 
     def __str__(self) -> str:

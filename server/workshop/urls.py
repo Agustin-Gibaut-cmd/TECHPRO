@@ -1,17 +1,3 @@
-"""Rutas de endpoints para la operativa de taller.
-
-Expone las rutas REST para clientes, proveedores, inventario, ventas y reportes:
-- `/customers/`: Lista y alta de clientes.
-- `/customers/<id>/`: Detalle y modificación de clientes.
-- `/suppliers/`: Lista y alta de proveedores.
-- `/suppliers/<id>/`: Detalle y modificación de proveedores.
-- `/inventory/`: Lista y alta de artículos y stock.
-- `/inventory/<id>/`: Detalle y modificación de inventario.
-- `/sales/`: Lista y registro de ventas.
-- `/sales/<id>/`: Detalle y modificación de ventas.
-- `/reports/summary/`: Métricas consolidadas e información para gráficos.
-"""
-
 from django.urls import path
 
 from .views import (

@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -8,7 +9,6 @@ import {
   ViewChild,
   inject,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -18,7 +18,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { extractErrorMessage } from '../error.utils';
 import {
   CustomerPayload,
   CustomerRecord,
@@ -26,51 +25,53 @@ import {
 } from './customers.service';
 
 interface CustomerFormControls {
-  readonly name: FormControl<string>;
-  readonly phone: FormControl<string>;
-  readonly email: FormControl<string>;
-  readonly address: FormControl<string>;
-  readonly notes: FormControl<string>;
+  name: FormControl<string>;
+  phone: FormControl<string>;
+  email: FormControl<string>;
+  address: FormControl<string>;
+  notes: FormControl<string>;
 }
 
-/**
- * Componente para el alta, edición, consulta y baja de clientes del taller.
- */
 @Component({
   imports: [DatePipe, ReactiveFormsModule],
   selector: 'app-customers',
   templateUrl: './customers.html',
 })
 export class Customers implements OnInit {
-  private readonly fb: FormBuilder = inject(FormBuilder);
-  private readonly customersService: CustomersService = inject(CustomersService);
+  private readonly fb = inject(FormBuilder);
+  private readonly customersService = inject(CustomersService);
 
   @Output() readonly back = new EventEmitter<void>();
   @ViewChild('customerFormElement')
   private readonly customerFormElement?: ElementRef<HTMLElement>;
 
-  readonly customers: WritableSignal<CustomerRecord[]> = signal<CustomerRecord[]>([]);
-  readonly editingCustomerId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly pendingDeleteId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly deletingCustomerId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
-  readonly isSaving: WritableSignal<boolean> = signal<boolean>(false);
-  readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
-  readonly successMessage: WritableSignal<string | null> = signal<string | null>(null);
+  readonly customers = signal<CustomerRecord[]>([]);
+  readonly editingCustomerId = signal<number | null>(null);
+  readonly pendingDeleteId = signal<number | null>(null);
+  readonly deletingCustomerId = signal<number | null>(null);
+  readonly isLoading = signal(false);
+  readonly isSaving = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
 
-  readonly customerForm: FormGroup<CustomerFormControls> = this.fb.nonNullable.group<CustomerFormControls>({
-    name: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)]),
-    phone: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(32)]),
-    email: this.fb.nonNullable.control('', [Validators.email, Validators.maxLength(254)]),
-    address: this.fb.nonNullable.control('', [Validators.maxLength(200)]),
-    notes: this.fb.nonNullable.control('', [Validators.maxLength(1000)]),
+  readonly customerForm: FormGroup<CustomerFormControls> = this.fb.nonNullable.group({
+    name: [
+      '',
+      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)],
+    ],
+    phone: [
+      '',
+      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(32)],
+    ],
+    email: ['', [Validators.email, Validators.maxLength(254)]],
+    address: ['', [Validators.maxLength(200)]],
+    notes: ['', [Validators.maxLength(1000)]],
   });
 
   ngOnInit(): void {
     this.loadCustomers();
   }
 
-  /** Carga la cartera completa de clientes desde el servidor. */
   loadCustomers(): void {
     this.errorMessage.set(null);
     this.isLoading.set(true);
@@ -79,12 +80,11 @@ export class Customers implements OnInit {
       .list()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (items: CustomerRecord[]) => this.customers.set(items),
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        next: (customers) => this.customers.set(customers),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
-  /** Carga los datos de un cliente en el formulario para edición. */
   editCustomer(customer: CustomerRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -103,7 +103,6 @@ export class Customers implements OnInit {
     });
   }
 
-  /** Cancela la edición y reinicia el formulario. */
   cancelEdit(): void {
     this.editingCustomerId.set(null);
     this.customerForm.reset(this.emptyFormValue());
@@ -111,7 +110,6 @@ export class Customers implements OnInit {
     this.successMessage.set(null);
   }
 
-  /** Guarda los cambios de un cliente existente o registra uno nuevo. */
   saveCustomer(): void {
     if (this.isSaving() || this.deletingCustomerId() !== null) {
       return;
@@ -132,6 +130,7 @@ export class Customers implements OnInit {
 
     const formValue = this.customerForm.getRawValue();
     const payload: CustomerPayload = {
+      ...formValue,
       name: formValue.name.trim(),
       phone: formValue.phone.trim(),
       email: formValue.email.trim().toLowerCase(),
@@ -147,11 +146,12 @@ export class Customers implements OnInit {
     request
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (customer: CustomerRecord) => {
-          this.customers.update((items: CustomerRecord[]) =>
-            [...items.filter((item: CustomerRecord) => item.id !== customer.id), customer].sort(
-              (a: CustomerRecord, b: CustomerRecord) => a.name.localeCompare(b.name)
-            )
+        next: (customer) => {
+          this.customers.update((customers) =>
+            [
+              ...customers.filter((item) => item.id !== customer.id),
+              customer,
+            ].sort((left, right) => left.name.localeCompare(right.name))
           );
           this.editingCustomerId.set(null);
           this.customerForm.reset(this.emptyFormValue());
@@ -161,17 +161,15 @@ export class Customers implements OnInit {
               : 'El cliente se actualizó correctamente.'
           );
         },
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
-  /** Muestra u oculta la confirmación de eliminación para un cliente. */
   askToDelete(customerId: number): void {
-    this.pendingDeleteId.update((id: number | null) => (id === customerId ? null : customerId));
+    this.pendingDeleteId.update((pendingId) => (pendingId === customerId ? null : customerId));
     this.errorMessage.set(null);
   }
 
-  /** Da de baja el cliente seleccionado en el servidor. */
   deleteCustomer(customer: CustomerRecord): void {
     if (this.isSaving() || this.deletingCustomerId() !== null) {
       return;
@@ -185,8 +183,8 @@ export class Customers implements OnInit {
       .pipe(finalize(() => this.deletingCustomerId.set(null)))
       .subscribe({
         next: () => {
-          this.customers.update((items: CustomerRecord[]) =>
-            items.filter((item: CustomerRecord) => item.id !== customer.id)
+          this.customers.update((customers) =>
+            customers.filter((item) => item.id !== customer.id)
           );
           if (this.editingCustomerId() === customer.id) {
             this.cancelEdit();
@@ -194,11 +192,37 @@ export class Customers implements OnInit {
           this.pendingDeleteId.set(null);
           this.successMessage.set('El cliente se eliminó correctamente.');
         },
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
   private emptyFormValue(): CustomerPayload {
     return { name: '', phone: '', email: '', address: '', notes: '' };
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'No se pudo completar la solicitud.';
+    }
+    if (error.status === 0) {
+      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
+    }
+    if (error.status === 401) {
+      return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
+    }
+    if (typeof error.error === 'object' && error.error !== null) {
+      for (const value of Object.values(error.error)) {
+        if (typeof value === 'string') {
+          return value;
+        }
+        if (Array.isArray(value)) {
+          const message = value.find((item: unknown): item is string => typeof item === 'string');
+          if (message) {
+            return message;
+          }
+        }
+      }
+    }
+    return 'No se pudo guardar el cliente. Revisá los datos e intentá nuevamente.';
   }
 }

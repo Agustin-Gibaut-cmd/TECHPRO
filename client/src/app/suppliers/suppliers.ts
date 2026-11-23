@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -8,7 +9,6 @@ import {
   ViewChild,
   inject,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -18,7 +18,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { extractErrorMessage } from '../error.utils';
 import {
   SupplierPayload,
   SupplierRecord,
@@ -26,51 +25,53 @@ import {
 } from './suppliers.service';
 
 interface SupplierFormControls {
-  readonly name: FormControl<string>;
-  readonly phone: FormControl<string>;
-  readonly email: FormControl<string>;
-  readonly address: FormControl<string>;
-  readonly notes: FormControl<string>;
+  name: FormControl<string>;
+  phone: FormControl<string>;
+  email: FormControl<string>;
+  address: FormControl<string>;
+  notes: FormControl<string>;
 }
 
-/**
- * Componente para el mantenimiento del catálogo de proveedores del taller.
- */
 @Component({
   imports: [DatePipe, ReactiveFormsModule],
   selector: 'app-suppliers',
   templateUrl: './suppliers.html',
 })
 export class Suppliers implements OnInit {
-  private readonly fb: FormBuilder = inject(FormBuilder);
-  private readonly suppliersService: SuppliersService = inject(SuppliersService);
+  private readonly fb = inject(FormBuilder);
+  private readonly suppliersService = inject(SuppliersService);
 
   @Output() readonly back = new EventEmitter<void>();
   @ViewChild('supplierFormElement')
   private readonly supplierFormElement?: ElementRef<HTMLElement>;
 
-  readonly suppliers: WritableSignal<SupplierRecord[]> = signal<SupplierRecord[]>([]);
-  readonly editingSupplierId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly pendingDeleteId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly deletingSupplierId: WritableSignal<number | null> = signal<number | null>(null);
-  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
-  readonly isSaving: WritableSignal<boolean> = signal<boolean>(false);
-  readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
-  readonly successMessage: WritableSignal<string | null> = signal<string | null>(null);
+  readonly suppliers = signal<SupplierRecord[]>([]);
+  readonly editingSupplierId = signal<number | null>(null);
+  readonly pendingDeleteId = signal<number | null>(null);
+  readonly deletingSupplierId = signal<number | null>(null);
+  readonly isLoading = signal(false);
+  readonly isSaving = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
 
-  readonly supplierForm: FormGroup<SupplierFormControls> = this.fb.nonNullable.group<SupplierFormControls>({
-    name: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)]),
-    phone: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(32)]),
-    email: this.fb.nonNullable.control('', [Validators.email, Validators.maxLength(254)]),
-    address: this.fb.nonNullable.control('', [Validators.maxLength(200)]),
-    notes: this.fb.nonNullable.control('', [Validators.maxLength(1000)]),
+  readonly supplierForm: FormGroup<SupplierFormControls> = this.fb.nonNullable.group({
+    name: [
+      '',
+      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)],
+    ],
+    phone: [
+      '',
+      [Validators.required, Validators.pattern(/\S/), Validators.maxLength(32)],
+    ],
+    email: ['', [Validators.email, Validators.maxLength(254)]],
+    address: ['', [Validators.maxLength(200)]],
+    notes: ['', [Validators.maxLength(1000)]],
   });
 
   ngOnInit(): void {
     this.loadSuppliers();
   }
 
-  /** Carga la lista completa de proveedores desde el servidor. */
   loadSuppliers(): void {
     this.errorMessage.set(null);
     this.isLoading.set(true);
@@ -79,12 +80,11 @@ export class Suppliers implements OnInit {
       .list()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (items: SupplierRecord[]) => this.suppliers.set(items),
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        next: (suppliers) => this.suppliers.set(suppliers),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
-  /** Abre el proveedor seleccionado en el formulario para edición. */
   editSupplier(supplier: SupplierRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -103,7 +103,6 @@ export class Suppliers implements OnInit {
     });
   }
 
-  /** Cancela la edición y reinicia los campos del formulario. */
   cancelEdit(): void {
     this.editingSupplierId.set(null);
     this.supplierForm.reset(this.emptyFormValue());
@@ -111,7 +110,6 @@ export class Suppliers implements OnInit {
     this.successMessage.set(null);
   }
 
-  /** Guarda un nuevo proveedor o actualiza los datos del existente. */
   saveSupplier(): void {
     if (this.isSaving() || this.deletingSupplierId() !== null) {
       return;
@@ -132,6 +130,7 @@ export class Suppliers implements OnInit {
 
     const formValue = this.supplierForm.getRawValue();
     const payload: SupplierPayload = {
+      ...formValue,
       name: formValue.name.trim(),
       phone: formValue.phone.trim(),
       email: formValue.email.trim().toLowerCase(),
@@ -147,10 +146,10 @@ export class Suppliers implements OnInit {
     request
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (supplier: SupplierRecord) => {
-          this.suppliers.update((items: SupplierRecord[]) =>
-            [...items.filter((item: SupplierRecord) => item.id !== supplier.id), supplier].sort(
-              (a: SupplierRecord, b: SupplierRecord) => a.name.localeCompare(b.name)
+        next: (supplier) => {
+          this.suppliers.update((suppliers) =>
+            [...suppliers.filter((item) => item.id !== supplier.id), supplier].sort(
+              (left, right) => left.name.localeCompare(right.name)
             )
           );
           this.editingSupplierId.set(null);
@@ -161,17 +160,17 @@ export class Suppliers implements OnInit {
               : 'El proveedor se actualizó correctamente.'
           );
         },
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
-  /** Muestra u oculta la confirmación de eliminación para un proveedor. */
   askToDelete(supplierId: number): void {
-    this.pendingDeleteId.update((id: number | null) => (id === supplierId ? null : supplierId));
+    this.pendingDeleteId.update((pendingId) =>
+      pendingId === supplierId ? null : supplierId
+    );
     this.errorMessage.set(null);
   }
 
-  /** Da de baja el proveedor en el backend. */
   deleteSupplier(supplier: SupplierRecord): void {
     if (this.isSaving() || this.deletingSupplierId() !== null) {
       return;
@@ -185,8 +184,8 @@ export class Suppliers implements OnInit {
       .pipe(finalize(() => this.deletingSupplierId.set(null)))
       .subscribe({
         next: () => {
-          this.suppliers.update((items: SupplierRecord[]) =>
-            items.filter((item: SupplierRecord) => item.id !== supplier.id)
+          this.suppliers.update((suppliers) =>
+            suppliers.filter((item) => item.id !== supplier.id)
           );
           if (this.editingSupplierId() === supplier.id) {
             this.cancelEdit();
@@ -194,11 +193,37 @@ export class Suppliers implements OnInit {
           this.pendingDeleteId.set(null);
           this.successMessage.set('El proveedor se eliminó correctamente.');
         },
-        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
+        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
       });
   }
 
   private emptyFormValue(): SupplierPayload {
     return { name: '', phone: '', email: '', address: '', notes: '' };
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'No se pudo completar la solicitud.';
+    }
+    if (error.status === 0) {
+      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
+    }
+    if (error.status === 401) {
+      return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
+    }
+    if (typeof error.error === 'object' && error.error !== null) {
+      for (const value of Object.values(error.error)) {
+        if (typeof value === 'string') {
+          return value;
+        }
+        if (Array.isArray(value)) {
+          const message = value.find((item: unknown): item is string => typeof item === 'string');
+          if (message) {
+            return message;
+          }
+        }
+      }
+    }
+    return 'No se pudo guardar el proveedor. Revisá los datos e intentá nuevamente.';
   }
 }

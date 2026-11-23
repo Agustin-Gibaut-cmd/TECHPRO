@@ -1,111 +1,113 @@
-﻿# ==============================================================================
-# TECHPRO - Script de Validación Integral
-# Ejecuta comprobaciones del backend (Django) y frontend (Angular)
-# ==============================================================================
+$ErrorActionPreference = "Stop"
 
-[CmdletBinding()]
-param(
-    [switch]$SkipFrontend,
-    [switch]$SkipBackend,
-    [string]$DbEngine = "sqlite"
-)
+$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$serverDirectory = Join-Path $repositoryRoot "server"
+$clientDirectory = Join-Path $repositoryRoot "client"
+$validationFailures = New-Object "System.Collections.Generic.List[string]"
 
-$ErrorActionPreference = "Continue"
-
-# Rutas del repositorio
-$Root = (Resolve-Path "$PSScriptRoot\..").Path
-$ServerDir = Join-Path $Root "server"
-$ClientDir = Join-Path $Root "client"
-
-# 1. Detección de Python
-$Python = if (Test-Path "$ServerDir\.venv\Scripts\python.exe") {
-    "$ServerDir\.venv\Scripts\python.exe"
-} elseif (Get-Command python -ErrorAction SilentlyContinue) {
-    (Get-Command python).Source
-} elseif (Get-Command py -ErrorAction SilentlyContinue) {
-    (Get-Command py).Source
+$localPython = Join-Path $serverDirectory ".venv\Scripts\python.exe"
+$pythonPrefix = @()
+if (Test-Path $localPython) {
+    $pythonExecutable = $localPython
 } else {
-    Write-Error "No se encontró Python. Instalá Python o creá el entorno en server\.venv."
-    exit 1
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCommand) {
+        $pythonExecutable = $pythonCommand.Source
+    } else {
+        $pythonCommand = Get-Command py -ErrorAction SilentlyContinue
+        if (-not $pythonCommand) {
+            throw "No se encontró Python. Instalalo o creá server\.venv."
+        }
+        $pythonExecutable = $pythonCommand.Source
+        $pythonPrefix = @("-3")
+    }
 }
 
-# 2. Detección de Node/npm
-$Npm = if (Get-Command npm.cmd -ErrorAction SilentlyContinue) {
-    (Get-Command npm.cmd).Source
-} elseif (Get-Command npm -ErrorAction SilentlyContinue) {
-    (Get-Command npm).Source
-} else {
-    Write-Error "No se encontró npm. Instalá Node.js y npm."
-    exit 1
+$npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (-not $npmCommand) {
+    $npmCommand = Get-Command npm -ErrorAction SilentlyContinue
 }
-
-# 3. Base de datos para pruebas (usa SQLite por defecto para agilidad local)
-if (-not $env:DB_ENGINE) {
-    $env:DB_ENGINE = $DbEngine
+if (-not $npmCommand) {
+    throw "No se encontró npm. Instalá Node.js y npm."
 }
+$npmExecutable = $npmCommand.Source
 
-$Failures = @()
-
-function Run-Step {
+function Invoke-ValidationStep {
     param(
-        [string]$Title,
-        [string]$WorkDir,
-        [string]$Command,
-        [string[]]$Args
+        [string]$Name,
+        [string]$WorkingDirectory,
+        [string]$Executable,
+        [string[]]$Arguments
     )
 
-    Write-Host "`n>>> $Title" -ForegroundColor Cyan
-    Push-Location $WorkDir
+    Write-Output ""
+    Write-Output "== $Name =="
+    $exitCode = 1
+    Push-Location $WorkingDirectory
     try {
-        & $Command $Args
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "[OK] $Title" -ForegroundColor Green
-        } else {
-            Write-Host "[ERROR] $Title (Código: $LASTEXITCODE)" -ForegroundColor Red
-            $script:Failures += $Title
-        }
+        & $Executable @Arguments
+        $exitCode = $LASTEXITCODE
     } catch {
-        Write-Host "[EXCEPCIÓN] $_" -ForegroundColor Red
-        $script:Failures += $Title
+        Write-Output $_
     } finally {
         Pop-Location
     }
-}
 
-# 4. Comprobaciones de Backend
-if (-not $SkipBackend) {
-    Run-Step -Title "Django System Check" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "check")
-    Run-Step -Title "Django Migration Consistency" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "makemigrations", "--check", "--dry-run")
-    Run-Step -Title "Django API Tests (75 pruebas)" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "test", "tests")
-}
-
-# 5. Comprobaciones de Frontend
-if (-not $SkipFrontend) {
-    if (Test-Path "$ClientDir\node_modules") {
-        Run-Step -Title "Angular Component Tests" -WorkDir $ClientDir -Command $Npm -Args @("test", "--", "--watch=false")
-        Run-Step -Title "Angular Production Build" -WorkDir $ClientDir -Command $Npm -Args @("run", "build")
+    if ($exitCode -eq 0) {
+        Write-Output "RESULTADO: OK"
     } else {
-        Write-Host "`n[AVISO] Se omite el frontend porque no existe client\node_modules (ejecutá 'npm install' en client)." -ForegroundColor Yellow
+        Write-Output "RESULTADO: ERROR (código $exitCode)"
+        $script:validationFailures.Add($Name)
     }
 }
 
-# 6. Comprobación de formato Git
-$Git = Get-Command git -ErrorAction SilentlyContinue
-if ($Git) {
-    Run-Step -Title "Git Whitespace Check" -WorkDir $Root -Command $Git.Source -Args @("diff", "--check")
+Invoke-ValidationStep `
+    "Django system check" `
+    $serverDirectory `
+    $pythonExecutable `
+    ($pythonPrefix + @("manage.py", "check"))
+
+Invoke-ValidationStep `
+    "Django migration consistency" `
+    $serverDirectory `
+    $pythonExecutable `
+    ($pythonPrefix + @("manage.py", "makemigrations", "--check", "--dry-run"))
+
+Invoke-ValidationStep `
+    "Django API tests" `
+    $serverDirectory `
+    $pythonExecutable `
+    ($pythonPrefix + @("manage.py", "test", "tests"))
+
+Invoke-ValidationStep `
+    "Angular component tests" `
+    $clientDirectory `
+    $npmExecutable `
+    @("test", "--", "--watch=false")
+
+Invoke-ValidationStep `
+    "Angular production build" `
+    $clientDirectory `
+    $npmExecutable `
+    @("run", "build")
+
+$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+if ($gitCommand) {
+    Invoke-ValidationStep `
+        "Git whitespace check" `
+        $repositoryRoot `
+        $gitCommand.Source `
+        @("diff", "--check")
 }
 
-# 7. Resumen de resultados
-Write-Host "`n" + ("=" * 55)
-if ($Failures.Count -eq 0) {
-    Write-Host "TODAS LAS VALIDACIONES PASARON EXITOSAMENTE." -ForegroundColor Green
-    Write-Host ("=" * 55) + "`n"
+Write-Output ""
+if ($validationFailures.Count -eq 0) {
+    Write-Output "VALIDACIÓN COMPLETA: todas las comprobaciones pasaron."
     exit 0
-} else {
-    Write-Host "VALIDACIÓN INCOMPLETA. Fallaron los siguientes pasos:" -ForegroundColor Red
-    foreach ($item in $Failures) {
-        Write-Host " - $item" -ForegroundColor Red
-    }
-    Write-Host ("=" * 55) + "`n"
-    exit 1
 }
+
+Write-Output "VALIDACIÓN INCOMPLETA: fallaron estos pasos:"
+foreach ($failure in $validationFailures) {
+    Write-Output " - $failure"
+}
+exit 1
