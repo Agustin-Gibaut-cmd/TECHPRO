@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="image.png" alt="TECHPRO Logo" width="300">
-</p>
-
 # TECHPRO
 
 **Sistema de gestión para talleres de reparación y servicio técnico.**
@@ -44,7 +40,7 @@ TECHPRO/
 │
 ├── tests/              # Validaciones generales
 ├── database.sql        # Referencia de tablas
-├── image.png           # Logo de presentación
+├── endpoint.md         # Documentación de endpoints
 └── README.md
 ```
 
@@ -109,71 +105,6 @@ npm start
 ```
 
 Frontend: http://localhost:4200
-
-## Endpoints de la API
-
-### Autenticación (`/api/auth/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/auth/csrf/` | Obtiene el token CSRF para solicitudes de escritura. |
-| `POST` | `/api/auth/register/` | Registra una cuenta nueva y emite cookies JWT HttpOnly. |
-| `POST` | `/api/auth/login/` | Inicia sesión y emite cookies JWT HttpOnly. |
-| `POST` | `/api/auth/token/refresh/` | Renueva y rota los tokens JWT sin exponerlos en el body. |
-| `GET` | `/api/auth/me/` | Obtiene los datos de la cuenta actualmente autenticada. |
-| `POST` | `/api/auth/logout/` | Revoca la sesión y elimina las cookies HttpOnly. |
-
-### Reparaciones (`/api/repairs/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/repairs/` | Lista las órdenes de reparación del usuario actual. |
-| `POST` | `/api/repairs/` | Registra una nueva orden de reparación. |
-| `PUT`, `PATCH` | `/api/repairs/<id>/` | Actualiza los datos o el estado de una reparación existente. |
-
-### Clientes (`/api/customers/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/customers/` | Lista los clientes registrados por el usuario. |
-| `POST` | `/api/customers/` | Registra un nuevo cliente. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/customers/<id>/` | Consulta, edita o elimina un cliente específico. |
-
-### Inventario (`/api/inventory/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/inventory/` | Lista todos los productos y repuestos en inventario. |
-| `POST` | `/api/inventory/` | Agrega un nuevo producto o repuesto al inventario. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/inventory/<id>/` | Consulta, edita o elimina un producto de inventario. |
-
-### Proveedores (`/api/suppliers/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/suppliers/` | Lista los proveedores registrados por el usuario. |
-| `POST` | `/api/suppliers/` | Registra un nuevo proveedor. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/suppliers/<id>/` | Consulta, edita o elimina un proveedor. |
-
-### Ventas (`/api/sales/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/sales/` | Lista las ventas registradas ordenadas cronológicamente. |
-| `POST` | `/api/sales/` | Registra una nueva venta de producto. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/sales/<id>/` | Consulta, modifica o elimina un registro de venta. |
-
-### Reportes (`/api/reports/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/reports/summary/` | Retorna estadísticas consolidadas e indicadores para los gráficos del dashboard (ventas mensuales, productos destacados, stock bajo y reparaciones). |
-
-### Salud del Sistema
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/health/` | Comprueba el estado y disponibilidad del servicio backend. |
 
 ---
 
