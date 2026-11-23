@@ -1,3 +1,10 @@
+"""Controladores y vistas del flujo de autenticación de TECHPRO.
+
+Gestiona las cookies HttpOnly para los tokens JWT (access y refresh), la protección
+CSRF en métodos de modificación y las operaciones de sesión (registro, login,
+refresco, perfil y logout).
+"""
+
 from django.conf import settings
 from django.middleware.csrf import get_token
 from rest_framework import status
@@ -6,21 +13,24 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .authentication import enforce_csrf
-from .throttling import LoginRateThrottle
 from .serializers import (
     LoginSerializer,
     RegisterSerializer,
     create_token_response,
     serialize_user,
 )
+from .throttling import LoginRateThrottle
+
+SESSION_EXPIRED_MESSAGE = "La sesión expiró."
 
 
 def set_auth_cookies(response: Response, access: str, refresh: str) -> None:
+    """Configura las cookies de acceso y refresco con banderas de máxima seguridad."""
     response["Cache-Control"] = "no-store"
     response.set_cookie(
         settings.AUTH_ACCESS_COOKIE,
@@ -43,6 +53,7 @@ def set_auth_cookies(response: Response, access: str, refresh: str) -> None:
 
 
 def clear_auth_cookies(response: Response) -> None:
+    """Elimina las cookies de autenticación expirando su vigencia de inmediato."""
     response["Cache-Control"] = "no-store"
     response.delete_cookie(
         settings.AUTH_ACCESS_COOKIE,
@@ -57,6 +68,8 @@ def clear_auth_cookies(response: Response) -> None:
 
 
 class CsrfTokenView(APIView):
+    """Genera y retorna un token CSRF para inicializar peticiones mutables del cliente."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -67,6 +80,8 @@ class CsrfTokenView(APIView):
 
 
 class RegisterView(APIView):
+    """Crea una cuenta nueva y establece inmediatamente la sesión mediante cookies."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -85,6 +100,8 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    """Autentica credenciales y emite nuevas cookies de sesión con rate limiting por IP."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_classes = [LoginRateThrottle]
@@ -106,22 +123,30 @@ class LoginView(APIView):
 
 
 class CookieTokenRefreshView(APIView):
+    """Renueva el token de acceso rotando tokens a partir de la cookie de refresco."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
+
+    def get_authenticate_header(self, request: Request) -> str:
+        return JWTAuthentication().authenticate_header(request) or "Bearer"
 
     def post(self, request: Request) -> Response:
         enforce_csrf(request)
         refresh = request.COOKIES.get(settings.AUTH_REFRESH_COOKIE)
         if refresh is None:
             response = Response(
-                {"detail": "La sesión expiró."},
+                {"detail": SESSION_EXPIRED_MESSAGE},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
             response["Cache-Control"] = "no-store"
             return response
 
         serializer = TokenRefreshSerializer(data={"refresh": refresh})
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as error:
+            raise InvalidToken(error.args[0]) from error
         tokens = serializer.validated_data
         response = Response(status=status.HTTP_204_NO_CONTENT)
         set_auth_cookies(
@@ -133,6 +158,8 @@ class CookieTokenRefreshView(APIView):
 
 
 class CurrentUserView(APIView):
+    """Devuelve la información de perfil correspondiente a la sesión activa."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -140,6 +167,8 @@ class CurrentUserView(APIView):
 
 
 class LogoutView(APIView):
+    """Revoca el refresh token en la lista negra y elimina las cookies del navegador."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 

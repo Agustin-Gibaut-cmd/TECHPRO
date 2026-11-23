@@ -1,10 +1,14 @@
-import { Component, WritableSignal, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthCredentials, AuthForm } from '../auth-form/auth-form';
 import { AuthService } from '../auth.service';
+import { extractErrorMessage } from '../error.utils';
 
+/**
+ * Componente principal de acceso al sistema.
+ * Permite alternar dinámicamente entre los modos de inicio de sesión y registro de cuenta.
+ */
 @Component({
   imports: [AuthForm],
   selector: 'app-login',
@@ -18,11 +22,13 @@ export class Login {
   readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
   readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
 
+  /** Alterna entre el formulario de inicio de sesión y el de alta de cuenta. */
   toggleMode(): void {
-    this.isRegisterMode.update((value: boolean): boolean => !value);
+    this.isRegisterMode.update((val: boolean) => !val);
     this.errorMessage.set(null);
   }
 
+  /** Procesa el envío del formulario delegando en AuthService según el modo actual. */
   onSubmit(credentials: AuthCredentials): void {
     if (this.isLoading()) {
       return;
@@ -31,42 +37,24 @@ export class Login {
     this.errorMessage.set(null);
     this.isLoading.set(true);
 
-    const request = this.isRegisterMode()
+    const authCall = this.isRegisterMode()
       ? this.authService.register(credentials.name, credentials.email, credentials.password)
       : this.authService.login(credentials.email, credentials.password);
 
-    request
+    authCall
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: () => void this.router.navigate(['/dashboard']),
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => {
+          this.errorMessage.set(
+            extractErrorMessage(
+              err,
+              this.isRegisterMode()
+                ? 'No se pudo crear la cuenta. Verificá los datos ingresados.'
+                : 'Correo o contraseña incorrectos.'
+            )
+          );
+        },
       });
-  }
-
-  private getErrorMessage(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return 'No se pudo completar la solicitud.';
-    }
-
-    if (error.status === 0) {
-      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
-    }
-
-    if (typeof error.error === 'object' && error.error !== null) {
-      for (const value of Object.values(error.error)) {
-        if (typeof value === 'string') {
-          return value;
-        }
-
-        if (Array.isArray(value)) {
-          const message = value.find((item: unknown): item is string => typeof item === 'string');
-          if (message) {
-            return message;
-          }
-        }
-      }
-    }
-
-    return 'No se pudo completar la operación. Revisá los datos e intentá nuevamente.';
   }
 }

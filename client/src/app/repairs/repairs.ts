@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   ElementRef,
@@ -9,6 +8,7 @@ import {
   ViewChild,
   inject,
   signal,
+  WritableSignal,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -18,6 +18,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { extractErrorMessage } from '../error.utils';
 import {
   RepairPayload,
   RepairRecord,
@@ -26,36 +27,40 @@ import {
 } from './repairs.service';
 
 interface RepairFormControls {
-  customer_name: FormControl<string>;
-  customer_phone: FormControl<string>;
-  device_type: FormControl<string>;
-  device_model: FormControl<string>;
-  serial_number: FormControl<string>;
-  issue_description: FormControl<string>;
-  status: FormControl<RepairStatus>;
+  readonly customer_name: FormControl<string>;
+  readonly customer_phone: FormControl<string>;
+  readonly device_type: FormControl<string>;
+  readonly device_model: FormControl<string>;
+  readonly serial_number: FormControl<string>;
+  readonly issue_description: FormControl<string>;
+  readonly status: FormControl<RepairStatus>;
 }
 
+/**
+ * Componente para administración del ciclo de vida de órdenes de servicio técnico.
+ */
 @Component({
   imports: [DatePipe, ReactiveFormsModule],
   selector: 'app-repairs',
   templateUrl: './repairs.html',
 })
 export class Repairs implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly repairsService = inject(RepairsService);
+  private readonly fb: FormBuilder = inject(FormBuilder);
+  private readonly repairsService: RepairsService = inject(RepairsService);
 
   @Output() readonly back = new EventEmitter<void>();
   @ViewChild('repairFormSection') private readonly repairFormSection?: ElementRef<HTMLElement>;
 
-  readonly repairs = signal<RepairRecord[]>([]);
-  readonly editingRepairId = signal<number | null>(null);
-  readonly pendingDeleteId = signal<number | null>(null);
-  readonly deletingRepairId = signal<number | null>(null);
-  readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
-  readonly statuses: ReadonlyArray<{ value: RepairStatus; label: string }> = [
+  readonly repairs: WritableSignal<RepairRecord[]> = signal<RepairRecord[]>([]);
+  readonly editingRepairId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly pendingDeleteId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly deletingRepairId: WritableSignal<number | null> = signal<number | null>(null);
+  readonly isLoading: WritableSignal<boolean> = signal<boolean>(false);
+  readonly isSaving: WritableSignal<boolean> = signal<boolean>(false);
+  readonly errorMessage: WritableSignal<string | null> = signal<string | null>(null);
+  readonly successMessage: WritableSignal<string | null> = signal<string | null>(null);
+
+  readonly statuses: ReadonlyArray<{ readonly value: RepairStatus; readonly label: string }> = [
     { value: 'received', label: 'Recibido' },
     { value: 'diagnosing', label: 'En diagnóstico' },
     { value: 'in_progress', label: 'En reparación' },
@@ -63,7 +68,8 @@ export class Repairs implements OnInit {
     { value: 'completed', label: 'Listo' },
     { value: 'delivered', label: 'Entregado' },
   ];
-  readonly statusLabels: Record<RepairStatus, string> = {
+
+  readonly statusLabels: Readonly<Record<RepairStatus, string>> = {
     received: 'Recibido',
     diagnosing: 'En diagnóstico',
     in_progress: 'En reparación',
@@ -72,13 +78,13 @@ export class Repairs implements OnInit {
     delivered: 'Entregado',
   };
 
-  readonly repairForm: FormGroup<RepairFormControls> = this.fb.nonNullable.group({
-    customer_name: ['', [Validators.required, Validators.maxLength(120)]],
-    customer_phone: ['', [Validators.required, Validators.maxLength(32)]],
-    device_type: ['', [Validators.required, Validators.maxLength(80)]],
-    device_model: ['', [Validators.maxLength(100)]],
-    serial_number: ['', [Validators.maxLength(100)]],
-    issue_description: ['', [Validators.required, Validators.maxLength(2000)]],
+  readonly repairForm: FormGroup<RepairFormControls> = this.fb.nonNullable.group<RepairFormControls>({
+    customer_name: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(120)]),
+    customer_phone: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(32)]),
+    device_type: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(80)]),
+    device_model: this.fb.nonNullable.control('', [Validators.maxLength(100)]),
+    serial_number: this.fb.nonNullable.control('', [Validators.maxLength(100)]),
+    issue_description: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(2000)]),
     status: this.fb.nonNullable.control<RepairStatus>('received', Validators.required),
   });
 
@@ -86,6 +92,7 @@ export class Repairs implements OnInit {
     this.loadRepairs();
   }
 
+  /** Carga todas las órdenes de reparación registradas. */
   loadRepairs(): void {
     this.errorMessage.set(null);
     this.isLoading.set(true);
@@ -94,11 +101,12 @@ export class Repairs implements OnInit {
       .list()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (repairs) => this.repairs.set(repairs),
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        next: (items: RepairRecord[]) => this.repairs.set(items),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Rellena el formulario con los datos de la orden a editar. */
   editRepair(repair: RepairRecord): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -119,6 +127,7 @@ export class Repairs implements OnInit {
     });
   }
 
+  /** Cancela la edición y reinicia los controles. */
   cancelEdit(): void {
     this.editingRepairId.set(null);
     this.repairForm.reset(this.emptyFormValue());
@@ -126,6 +135,7 @@ export class Repairs implements OnInit {
     this.successMessage.set(null);
   }
 
+  /** Guarda los cambios o da de alta una nueva reparación técnica. */
   saveRepair(): void {
     if (this.isSaving() || this.deletingRepairId() !== null) {
       return;
@@ -150,12 +160,12 @@ export class Repairs implements OnInit {
     request
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (repair) => {
+        next: (repair: RepairRecord) => {
           if (editingId === null) {
-            this.repairs.update((repairs) => [repair, ...repairs]);
+            this.repairs.update((items: RepairRecord[]) => [repair, ...items]);
           } else {
-            this.repairs.update((repairs) =>
-              repairs.map((item) => (item.id === repair.id ? repair : item))
+            this.repairs.update((items: RepairRecord[]) =>
+              items.map((item: RepairRecord) => (item.id === repair.id ? repair : item))
             );
           }
 
@@ -167,17 +177,17 @@ export class Repairs implements OnInit {
               : 'La reparación se actualizó correctamente.'
           );
         },
-        error: (error: unknown) => this.errorMessage.set(this.getErrorMessage(error)),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
+  /** Solicita confirmación para borrar una reparación. */
   askToDelete(repairId: number): void {
-    this.pendingDeleteId.update((pendingId) =>
-      pendingId === repairId ? null : repairId
-    );
+    this.pendingDeleteId.update((id: number | null) => (id === repairId ? null : repairId));
     this.errorMessage.set(null);
   }
 
+  /** Elimina definitivamente la reparación del sistema. */
   deleteRepair(repair: RepairRecord): void {
     if (this.isSaving() || this.deletingRepairId() !== null) {
       return;
@@ -191,22 +201,14 @@ export class Repairs implements OnInit {
       .pipe(finalize(() => this.deletingRepairId.set(null)))
       .subscribe({
         next: () => {
-          this.repairs.update((repairs) =>
-            repairs.filter((item) => item.id !== repair.id)
-          );
+          this.repairs.update((items: RepairRecord[]) => items.filter((it: RepairRecord) => it.id !== repair.id));
           if (this.editingRepairId() === repair.id) {
             this.cancelEdit();
           }
           this.pendingDeleteId.set(null);
           this.successMessage.set('La reparación se eliminó correctamente.');
         },
-        error: (error: unknown) =>
-          this.errorMessage.set(
-            this.getErrorMessage(
-              error,
-              'No se pudo eliminar la reparación. Intentá nuevamente.'
-            )
-          ),
+        error: (err: unknown) => this.errorMessage.set(extractErrorMessage(err)),
       });
   }
 
@@ -220,39 +222,5 @@ export class Repairs implements OnInit {
       issue_description: '',
       status: 'received',
     };
-  }
-
-  private getErrorMessage(
-    error: unknown,
-    fallback = 'No se pudo guardar la reparación. Revisá los datos e intentá nuevamente.'
-  ): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return 'No se pudo completar la solicitud.';
-    }
-
-    if (error.status === 0) {
-      return 'No se pudo conectar con el servidor. Verificá que Django esté iniciado.';
-    }
-
-    if (error.status === 401) {
-      return 'Tu sesión venció. Volvé a iniciar sesión para continuar.';
-    }
-
-    if (typeof error.error === 'object' && error.error !== null) {
-      for (const value of Object.values(error.error)) {
-        if (typeof value === 'string') {
-          return value;
-        }
-
-        if (Array.isArray(value)) {
-          const message = value.find((item: unknown): item is string => typeof item === 'string');
-          if (message) {
-            return message;
-          }
-        }
-      }
-    }
-
-    return fallback;
   }
 }
