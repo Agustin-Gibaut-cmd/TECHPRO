@@ -1,10 +1,4 @@
-"""Serializadores de DRF para el módulo de taller.
-
-Transforma y valida las entidades de clientes, proveedores, inventario y ventas,
-asegurando unicidad de SKU por taller y cálculo de totales calculados en servidor.
-"""
-
-from decimal import Decimal
+"""Serializadores de DRF para el módulo de taller."""
 
 from rest_framework import serializers
 
@@ -18,13 +12,12 @@ from .models import (
     Supplier,
 )
 
-# Límite superior para cantidades enteras en base de datos estándar (signed 32-bit integer)
 MAX_SALE_QUANTITY = 2_147_483_647
 DUPLICATE_SKU_MESSAGE = "Ya existe un producto con ese SKU."
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    """Serializador para consulta y mantenimiento de la cartera de clientes."""
+    """Serializador para consulta y mantenimiento de clientes."""
 
     class Meta:
         model = Customer
@@ -42,7 +35,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class SupplierSerializer(serializers.ModelSerializer):
-    """Serializador para gestión de información de proveedores."""
+    """Serializador para gestión de proveedores."""
 
     class Meta:
         model = Supplier
@@ -79,7 +72,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at", "updated_at")
 
     def validate_sku(self, value: str) -> str:
-        """Convierte el SKU a mayúsculas y corrobora que no esté duplicado en la cuenta."""
+        """Normaliza el SKU a mayúsculas y verifica unicidad dentro de la cuenta."""
         sku = value.strip().upper()
         queryset = InventoryItem.objects.filter(
             created_by=self.context["request"].user,
@@ -93,7 +86,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    """Serializador para registrar ventas directas, calculando el importe total en el servidor."""
+    """Serializador para ventas directas con cálculo de total en el servidor."""
 
     quantity = serializers.IntegerField(min_value=1, max_value=MAX_SALE_QUANTITY)
     unit_price = serializers.DecimalField(
@@ -118,5 +111,5 @@ class SaleSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "total", "created_at", "updated_at")
 
     def get_total(self, sale: Sale) -> str:
-        """Retorna el importe total como cadena formateada con precisión exacta."""
+        """Retorna el importe total calculado en el modelo."""
         return str(sale.total)

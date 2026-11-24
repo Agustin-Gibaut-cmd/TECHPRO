@@ -1,10 +1,10 @@
 """Modelos de datos para la gestión comercial y operativa del taller.
 
 Engloba las entidades esenciales para la operación diaria:
-- `Customer`: Directorio de clientes con datos de contacto.
-- `Supplier`: Proveedores de repuestos e insumos.
-- `InventoryItem`: Control de stock, repuestos, precios y niveles mínimos.
-- `Sale`: Registro de ventas directas de productos o accesorios.
+- Customer: Directorio de clientes con datos de contacto.
+- Supplier: Proveedores de repuestos e insumos.
+- InventoryItem: Control de stock, repuestos, precios y niveles mínimos.
+- Sale: Registro de ventas directas de productos o accesorios.
 """
 
 from decimal import Decimal
@@ -13,7 +13,6 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
-# Límites de longitud de campos
 CONTACT_NAME_MAX_LENGTH = 120
 PHONE_MAX_LENGTH = 32
 EMAIL_MAX_LENGTH = 254
@@ -28,6 +27,11 @@ PRODUCT_NAME_MAX_LENGTH = 120
 PRICE_MAX_DIGITS = 10
 PRICE_DECIMAL_PLACES = 2
 MIN_MONEY_VALUE = Decimal("0.00")
+
+
+def _normalize_spaced_text(value: str | None) -> str:
+    """Colapsa espacios en blanco múltiples y recorta extremos."""
+    return " ".join((value or "").split())
 
 
 class Customer(models.Model):
@@ -54,6 +58,13 @@ class Customer(models.Model):
                 name="customer_owner_name_idx",
             ),
         ]
+
+    def clean(self) -> None:
+        self.name = _normalize_spaced_text(self.name)
+        self.phone = _normalize_spaced_text(self.phone)
+        self.email = (self.email or "").strip().lower()
+        self.address = _normalize_spaced_text(self.address)
+        super().clean()
 
     def __str__(self) -> str:
         return self.name
@@ -83,6 +94,13 @@ class Supplier(models.Model):
                 name="supplier_owner_name_idx",
             ),
         ]
+
+    def clean(self) -> None:
+        self.name = _normalize_spaced_text(self.name)
+        self.phone = _normalize_spaced_text(self.phone)
+        self.email = (self.email or "").strip().lower()
+        self.address = _normalize_spaced_text(self.address)
+        super().clean()
 
     def __str__(self) -> str:
         return self.name
@@ -130,6 +148,12 @@ class InventoryItem(models.Model):
             ),
         ]
 
+    def clean(self) -> None:
+        self.name = _normalize_spaced_text(self.name)
+        self.sku = (self.sku or "").strip().upper()
+        self.category = _normalize_spaced_text(self.category)
+        super().clean()
+
     def __str__(self) -> str:
         return f"{self.name} ({self.sku})"
 
@@ -176,6 +200,11 @@ class Sale(models.Model):
     def total(self) -> Decimal:
         """Calcula el importe total de la venta multiplicando precio unitario y cantidad."""
         return self.unit_price * self.quantity
+
+    def clean(self) -> None:
+        self.customer_name = _normalize_spaced_text(self.customer_name)
+        self.product_name = _normalize_spaced_text(self.product_name)
+        super().clean()
 
     def __str__(self) -> str:
         return f"{self.product_name} x {self.quantity}"

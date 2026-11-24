@@ -1,18 +1,10 @@
-"""Controladores REST para la operativa diaria del taller.
-
-Incluye vistas para gestionar clientes, proveedores, inventario y ventas,
-así como el consolidado de reportes para el dashboard. Todas las operaciones
-están aisladas por usuario para garantizar privacidad de datos entre cuentas.
-"""
+"""Controladores REST para la operativa diaria del taller."""
 
 from typing import Any
 
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
-from rest_framework.generics import (
-    ListCreateAPIView,
-    RetrieveUpdateDestroyAPIView,
-)
+from django.db.models import Model, QuerySet
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -36,129 +28,119 @@ SQLITE_UNIQUE_SKU_FRAGMENT = (
 POSTGRES_UNIQUE_SKU_CONSTRAINT = "inventory_owner_sku_unique"
 
 
+class OwnerScopedMixin:
+    """Restringe las operaciones del queryset al usuario autenticado."""
+
+    model: type[Model]
+
+    def get_queryset(self) -> QuerySet[Any]:
+        return self.model.objects.filter(created_by=self.request.user)
+
+
+def _is_duplicate_sku_error(error: IntegrityError) -> bool:
+    """Detecta si el IntegrityError corresponde a colisión del SKU por usuario."""
+    cause = error.__cause__ or error
+    constraint_name = getattr(getattr(cause, "diag", None), "constraint_name", None)
+    return (
+        constraint_name == POSTGRES_UNIQUE_SKU_CONSTRAINT
+        or SQLITE_UNIQUE_SKU_FRAGMENT in str(cause)
+    )
+
+
 def _save_inventory_item(
     serializer: InventoryItemSerializer, **kwargs: Any
 ) -> None:
-    """Guarda un artículo de inventario capturando colisiones de SKU a nivel de base de datos.
-
-    Atiende posibles condiciones de carrera entre la validación del serializador
-    y la inserción efectiva en PostgreSQL o SQLite.
-    """
+    """Persiste un artículo de inventario capturando colisiones de SKU en BD."""
     try:
         with transaction.atomic():
             serializer.save(**kwargs)
     except IntegrityError as error:
-        cause = error.__cause__ or error
-        constraint_name = getattr(
-            getattr(cause, "diag", None), "constraint_name", None
-        )
-        if (
-            constraint_name == POSTGRES_UNIQUE_SKU_CONSTRAINT
-            or SQLITE_UNIQUE_SKU_FRAGMENT in str(cause)
-        ):
-            raise ValidationError(
-                {"sku": DUPLICATE_SKU_MESSAGE}
-            ) from error
+        if _is_duplicate_sku_error(error):
+            raise ValidationError({"sku": DUPLICATE_SKU_MESSAGE}) from error
         raise
 
 
-class CustomerListCreateView(ListCreateAPIView):
-    """Consulta la lista de clientes o registra uno nuevo para la cuenta actual."""
+class CustomerListCreateView(OwnerScopedMixin, ListCreateAPIView):
+    """Lista o crea clientes de la cuenta autenticada."""
 
+    model = Customer
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self) -> QuerySet[Customer]:
-        return Customer.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer: CustomerSerializer) -> None:
         serializer.save(created_by=self.request.user)
 
 
-class CustomerDetailView(RetrieveUpdateDestroyAPIView):
-    """Obtiene, actualiza o da de baja un cliente específico perteneciente al usuario."""
+class CustomerDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
+    """Consulta, actualiza o elimina un cliente propio."""
 
+    model = Customer
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet[Customer]:
-        return Customer.objects.filter(created_by=self.request.user)
 
+class SupplierListCreateView(OwnerScopedMixin, ListCreateAPIView):
+    """Lista o crea proveedores de la cuenta autenticada."""
 
-class SupplierListCreateView(ListCreateAPIView):
-    """Lista proveedores existentes o crea un nuevo contacto de proveedor."""
-
+    model = Supplier
     serializer_class = SupplierSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self) -> QuerySet[Supplier]:
-        return Supplier.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer: SupplierSerializer) -> None:
         serializer.save(created_by=self.request.user)
 
 
-class SupplierDetailView(RetrieveUpdateDestroyAPIView):
-    """Consulta, edita o elimina un proveedor asociado al taller del usuario."""
+class SupplierDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
+    """Consulta, actualiza o elimina un proveedor propio."""
 
+    model = Supplier
     serializer_class = SupplierSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet[Supplier]:
-        return Supplier.objects.filter(created_by=self.request.user)
 
+class InventoryListCreateView(OwnerScopedMixin, ListCreateAPIView):
+    """Lista o crea artículos de inventario de la cuenta autenticada."""
 
-class InventoryListCreateView(ListCreateAPIView):
-    """Lista productos en stock y permite incorporar nuevos repuestos o artículos."""
-
+    model = InventoryItem
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self) -> QuerySet[InventoryItem]:
-        return InventoryItem.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer: InventoryItemSerializer) -> None:
         _save_inventory_item(serializer, created_by=self.request.user)
 
 
-class InventoryDetailView(RetrieveUpdateDestroyAPIView):
-    """Permite ver el detalle, actualizar stock o precios, y eliminar artículos del inventario."""
+class InventoryDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
+    """Consulta, actualiza o elimina un artículo de inventario propio."""
 
+    model = InventoryItem
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self) -> QuerySet[InventoryItem]:
-        return InventoryItem.objects.filter(created_by=self.request.user)
 
     def perform_update(self, serializer: InventoryItemSerializer) -> None:
         _save_inventory_item(serializer)
 
 
-class SaleListCreateView(ListCreateAPIView):
-    """Lista las ventas del taller y registra nuevas ventas de repuestos o servicios."""
+class SaleListCreateView(OwnerScopedMixin, ListCreateAPIView):
+    """Lista o registra ventas de la cuenta autenticada."""
 
+    model = Sale
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self) -> QuerySet[Sale]:
-        return Sale.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer: SaleSerializer) -> None:
         serializer.save(created_by=self.request.user)
 
 
-class SaleDetailView(RetrieveUpdateDestroyAPIView):
-    """Consulta, modifica o anula una transacción de venta registrada."""
+class SaleDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
+    """Consulta, modifica o elimina una venta propia."""
 
+    model = Sale
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet[Sale]:
-        return Sale.objects.filter(created_by=self.request.user)
-
 
 class ReportSummaryView(APIView):
-    """Genera las métricas e indicadores de rendimiento agregados para el panel principal."""
+    """Retorna las métricas consolidadas del taller para el usuario autenticado."""
 
     permission_classes = [IsAuthenticated]
 
