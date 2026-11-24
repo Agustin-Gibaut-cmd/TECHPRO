@@ -12,6 +12,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -67,7 +68,9 @@ class RegisterSerializer(serializers.Serializer):
     def validate_email(self, value: str) -> str:
         """Normaliza el email a minúsculas y valida que no esté en uso."""
         normalized_email = value.strip().lower()
-        if User.objects.filter(username__iexact=normalized_email).exists():
+        if User.objects.filter(
+            Q(username__iexact=normalized_email) | Q(email__iexact=normalized_email)
+        ).exists():
             raise serializers.ValidationError("Ese correo ya está registrado.")
         return normalized_email
 
@@ -113,9 +116,16 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs: dict[str, str]) -> dict[str, object]:
         """Verifica que el usuario exista, esté activo y la contraseña sea correcta."""
         email = attrs["email"].strip().lower()
+        matched_user = (
+            User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email))
+            .order_by("id")
+            .first()
+        )
+        auth_username = matched_user.username if matched_user is not None else email
+
         user = authenticate(
             request=self.context.get("request"),
-            username=email,
+            username=auth_username,
             password=attrs["password"],
         )
         if user is None or not user.is_active:
