@@ -1,3 +1,4 @@
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { AuthCredentials, AuthForm } from './auth-form';
@@ -5,6 +6,12 @@ import { AuthCredentials, AuthForm } from './auth-form';
 describe('AuthForm', () => {
   let component: AuthForm;
   let fixture: ComponentFixture<AuthForm>;
+
+  const validCredentials: AuthCredentials = {
+    name: '',
+    email: 'ana@example.com',
+    password: 'password',
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -16,51 +23,62 @@ describe('AuthForm', () => {
     fixture.detectChanges();
   });
 
-  it('submits valid login credentials without requiring a name', () => {
-    const credentials: AuthCredentials = {
-      name: '',
-      email: 'ana@example.com',
-      password: 'password',
-    };
+  function setLoginCredentials(): void {
+    component.authForm.controls.email.setValue(
+      validCredentials.email,
+    );
+
+    component.authForm.controls.password.setValue(
+      validCredentials.password,
+    );
+  }
+
+  function subscribeToSubmission() {
     const submitted = vi.fn();
     component.submitted.subscribe(submitted);
-    component.authForm.controls.email.setValue(credentials.email);
-    component.authForm.controls.password.setValue(credentials.password);
+    return submitted;
+  }
 
+  it('submits valid login credentials without requiring a name', () => {
+    const submitted = subscribeToSubmission();
+
+    setLoginCredentials();
     component.onSubmit();
 
-    expect(submitted).toHaveBeenCalledWith(credentials);
+    expect(submitted).toHaveBeenCalledWith(validCredentials);
     expect(submitted).toHaveBeenCalledTimes(1);
   });
 
-  it('requires a valid name, long matching passwords, and email in registration mode', async () => {
+  it('validates registration credentials and matching passwords', async () => {
     component.registerMode = true;
     fixture.detectChanges();
     await fixture.whenStable();
 
     component.authForm.setValue({
       name: 'Ana',
-      email: 'ana@example.com',
+      email: validCredentials.email,
       password: 'StrongPass!2026',
       confirmPassword: 'StrongPass!2025',
     });
 
-    expect(component.authForm.hasError('passwordMismatch')).toBe(true);
+    expect(
+      component.authForm.hasError('passwordMismatch'),
+    ).toBe(true);
 
-    component.authForm.controls.confirmPassword.setValue('StrongPass!2026');
+    component.authForm.controls.confirmPassword.setValue(
+      'StrongPass!2026',
+    );
 
     expect(component.authForm.valid).toBe(true);
   });
 
-  it('does not emit while invalid or loading', () => {
-    const submitted = vi.fn();
-    component.submitted.subscribe(submitted);
+  it('does not submit invalid credentials or while loading', () => {
+    const submitted = subscribeToSubmission();
 
     component.onSubmit();
     expect(submitted).not.toHaveBeenCalled();
 
-    component.authForm.controls.email.setValue('ana@example.com');
-    component.authForm.controls.password.setValue('password');
+    setLoginCredentials();
     component.isLoading = true;
     component.onSubmit();
 
