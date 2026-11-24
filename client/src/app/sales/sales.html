@@ -1,15 +1,15 @@
 <section class="space-y-6">
   <header class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="text-xl font-semibold text-[#ededed]">Ventas</h2>
-      <p class="mt-1 text-sm text-[#8a8a8a]">
+      <h2 class="text-xl font-semibold text-[#F1F6F8]">Ventas</h2>
+      <p class="mt-1 text-sm text-[#AFBDC7]">
         Registrá cada producto vendido y consultá el historial de tu cuenta.
       </p>
     </div>
     <button
       type="button"
       (click)="back.emit()"
-      class="rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#c7c7c7] hover:bg-[#242424]"
+      class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
     >
       Volver al dashboard
     </button>
@@ -30,50 +30,50 @@
     #saleFormElement
     [formGroup]="saleForm"
     (ngSubmit)="saveSale()"
-    class="space-y-5 rounded-xl border border-[#2e2e2e] bg-[#202020] p-5 md:p-6"
+    class="space-y-5 rounded-xl border border-[#33434F] bg-[#172129] p-5 md:p-6"
     novalidate
   >
     <div>
-      <h3 class="text-base font-semibold text-[#ededed]">
+      <h3 class="text-base font-semibold text-[#F1F6F8]">
         @if (editingSaleId(); as saleId) {
           Editar venta #{{ saleId }}
         } @else {
           Registrar venta
         }
       </h3>
-      <p class="mt-1 text-xs text-[#8a8a8a]">
+      <p class="mt-1 text-xs text-[#AFBDC7]">
         Completá los datos de la operación. El total se calcula automáticamente.
         Este registro no modifica el stock del inventario.
       </p>
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
         <span>Producto *</span>
         <input
           formControlName="product_name"
           type="text"
           maxlength="120"
           autocomplete="off"
-          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.product_name.touched && saleForm.controls.product_name.invalid) {
           <span class="block text-xs text-red-400">Ingresá el nombre del producto.</span>
         }
       </label>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
         <span>Cliente (opcional)</span>
         <input
           formControlName="customer_name"
           type="text"
           maxlength="120"
           autocomplete="off"
-          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
         />
       </label>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
         <span>Cantidad *</span>
         <input
           formControlName="quantity"
@@ -81,21 +81,21 @@
           min="1"
           max="2147483647"
           step="1"
-          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.quantity.touched && saleForm.controls.quantity.invalid) {
           <span class="block text-xs text-red-400">Ingresá una cantidad entera mayor a cero.</span>
         }
       </label>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7]">
+      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
         <span>Precio unitario (ARS) *</span>
         <input
           formControlName="unit_price"
           type="number"
           min="0"
           step="0.01"
-          class="w-full rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.unit_price.touched && saleForm.controls.unit_price.invalid) {
           <span class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
@@ -104,9 +104,9 @@
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-sm text-[#a3a3a3]">
+      <p class="text-sm text-[#AFBDC7]">
         Total:
-        <strong class="text-[#ededed]">
+        <strong class="text-[#F1F6F8]">
           @if (previewTotal() !== null) {
             {{ previewTotal() | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
           } @else {
@@ -120,7 +120,7 @@
             type="button"
             (click)="cancelEdit()"
             [disabled]="isSaving() || deletingSaleId() !== null"
-            class="mr-3 rounded-lg border border-[#383838] px-4 py-2.5 text-sm text-[#c7c7c7] hover:bg-[#292929] disabled:opacity-60"
+            class="mr-3 rounded-lg border border-[#33434F] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
           >
             Cancelar edición
           </button>
@@ -128,7 +128,7 @@
         <button
           type="submit"
           [disabled]="isSaving() || deletingSaleId() !== null"
-          class="rounded-lg bg-[#ededed] px-4 py-2.5 text-sm font-medium text-[#171717] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+          class="rounded-lg bg-[#9AF3C7] px-4 py-2.5 text-sm font-medium text-[#0C1218] hover:bg-[#7FD8AA] disabled:cursor-not-allowed disabled:opacity-60"
         >
           @if (isSaving()) {
             Guardando…
@@ -142,32 +142,32 @@
     </div>
   </form>
 
-  <section class="overflow-hidden rounded-xl border border-[#2e2e2e] bg-[#202020]">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#2e2e2e] px-5 py-4">
+  <section class="overflow-hidden rounded-xl border border-[#33434F] bg-[#172129]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33434F] px-5 py-4">
       <div>
-        <h3 class="font-semibold text-[#ededed]">Ventas registradas</h3>
-        <p class="mt-1 text-xs text-[#8a8a8a]">El total de cada operación se calcula en el servidor.</p>
+        <h3 class="font-semibold text-[#F1F6F8]">Ventas registradas</h3>
+        <p class="mt-1 text-xs text-[#AFBDC7]">El total de cada operación se calcula en el servidor.</p>
       </div>
       <button
         type="button"
         (click)="loadSales()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#383838] px-3 py-2 text-xs text-[#c7c7c7] hover:bg-[#292929] disabled:opacity-60"
+        class="rounded-lg border border-[#33434F] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
       >
         {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
       </button>
     </div>
 
     @if (isLoading() && sales().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#8a8a8a]">Cargando ventas…</p>
+      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando ventas…</p>
     } @else if (sales().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#8a8a8a]">
+      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">
         Todavía no hay ventas registradas.
       </p>
     } @else {
       <div class="overflow-x-auto">
         <table class="w-full min-w-[900px] text-left text-sm">
-          <thead class="bg-[#252525] text-xs uppercase tracking-wide text-[#8a8a8a]">
+          <thead class="bg-[#0C1218] text-xs uppercase tracking-wide text-[#AFBDC7]">
             <tr>
               <th scope="col" class="px-5 py-3">Fecha</th>
               <th scope="col" class="px-5 py-3">Producto</th>
@@ -178,24 +178,24 @@
               <th scope="col" class="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#2e2e2e] text-[#c7c7c7]">
+          <tbody class="divide-y divide-[#33434F] text-[#AFBDC7]">
             @for (sale of sales(); track sale.id) {
-              <tr class="align-top hover:bg-[#242424]">
-                <td class="whitespace-nowrap px-5 py-4 text-xs text-[#8a8a8a]">
+              <tr class="align-top hover:bg-[#0C1218]">
+                <td class="whitespace-nowrap px-5 py-4 text-xs text-[#AFBDC7]">
                   {{ sale.created_at | date: 'dd/MM/yyyy HH:mm' }}
                 </td>
-                <td class="px-5 py-4 font-medium text-[#ededed]">{{ sale.product_name }}</td>
+                <td class="px-5 py-4 font-medium text-[#F1F6F8]">{{ sale.product_name }}</td>
                 <td class="px-5 py-4">{{ sale.customer_name || '—' }}</td>
                 <td class="px-5 py-4">{{ sale.quantity }}</td>
                 <td class="whitespace-nowrap px-5 py-4">
                   {{ sale.unit_price | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
                 </td>
-                <td class="whitespace-nowrap px-5 py-4 font-medium text-[#ededed]">
+                <td class="whitespace-nowrap px-5 py-4 font-medium text-[#F1F6F8]">
                   {{ sale.total | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
                 </td>
                 <td class="whitespace-nowrap px-5 py-4">
                   @if (pendingDeleteId() === sale.id) {
-                    <span class="mr-2 text-xs text-[#c7c7c7]">¿Eliminar?</span>
+                    <span class="mr-2 text-xs text-[#AFBDC7]">¿Eliminar?</span>
                     <button
                       type="button"
                       (click)="deleteSale(sale)"
@@ -208,7 +208,7 @@
                       type="button"
                       (click)="pendingDeleteId.set(null)"
                       [disabled]="deletingSaleId() !== null"
-                      class="ml-2 rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#c7c7c7] hover:bg-[#303030]"
+                      class="ml-2 rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
                     >
                       Cancelar
                     </button>
@@ -217,7 +217,7 @@
                       type="button"
                       (click)="editSale(sale)"
                       [disabled]="isSaving() || deletingSaleId() !== null"
-                      class="rounded-md border border-[#3b3b3b] px-3 py-1.5 text-xs text-[#ededed] hover:bg-[#303030] disabled:opacity-50"
+                      class="rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
                     >
                       Editar
                     </button>

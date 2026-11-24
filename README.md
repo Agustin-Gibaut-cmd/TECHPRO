@@ -88,6 +88,8 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 
 Configurar una en `DJANGO_SECRET_KEY` y otra en `JWT_SIGNING_KEY`.
 
+En `server/.env`, para este arranque local usá `DB_HOST=127.0.0.1` y `DB_SSLMODE=prefer`.
+
 Aplicar las migraciones e iniciar el servidor:
 
 ```powershell
@@ -96,6 +98,14 @@ python manage.py runserver 127.0.0.1:8000
 ```
 
 Backend: http://127.0.0.1:8000/api/
+
+Con Docker, desde la raíz del repositorio, el backend y PostgreSQL quedan en segundo plano:
+
+```powershell
+docker compose up -d --build
+```
+
+API: http://localhost:8000/api/ . El detalle está en `docker.md`.
 
 ### 3. Iniciar el frontend
 

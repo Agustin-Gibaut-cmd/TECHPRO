@@ -1,11 +1,11 @@
-<main class="min-h-screen w-full bg-[#171717] text-[#ededed] px-6 py-10 md:px-12">
+<main class="min-h-screen w-full bg-[#0C1218] text-[#F1F6F8] px-6 py-10 md:px-12">
   <div class="max-w-6xl mx-auto">
     <header class="flex items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-[#ededed]">
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-[#F1F6F8]">
           Hola, {{ currentUser()?.name ?? 'Usuario' }}
         </h1>
-        <p class="mt-2 text-xs font-medium text-[#737373]">
+        <p class="mt-2 text-xs font-medium text-[#AFBDC7]">
           Módulos del sistema
         </p>
       </div>
@@ -13,13 +13,13 @@
       <button
         type="button"
         (click)="logout()"
-        class="text-xs text-[#737373] border border-[#262626] bg-[#242424] px-3.5 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform"
+        class="text-xs text-[#AFBDC7] border border-[#33434F] bg-[#172129] px-3.5 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform"
       >
         Cerrar sesión
       </button>
     </header>
 
-    <div class="border-t border-[#262626] mt-3 mb-7"></div>
+    <div class="border-t border-[#33434F] mt-3 mb-7"></div>
 
     @if (selectedModule() === 'repairs') {
       <app-repairs (back)="selectedModule.set(null)" />
@@ -37,7 +37,7 @@
       @if (selectedModule()) {
         <p
           role="status"
-          class="mb-5 rounded-lg border border-[#2e2e2e] bg-[#242424] px-4 py-3 text-sm text-[#a3a3a3]"
+          class="mb-5 rounded-lg border border-[#33434F] bg-[#172129] px-4 py-3 text-sm text-[#AFBDC7]"
         >
           Esta sección todavía no está disponible.
         </p>
@@ -51,20 +51,20 @@
           <button
             type="button"
             (click)="selectModule(item)"
-            class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#242424] border border-[#2e2e2e] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#525252]"
+            class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#172129] border border-[#33434F] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#9AF3C7]"
           >
           <div class="relative z-10 max-w-[85%]">
-            <h2 class="text-lg font-semibold text-[#ededed]">
+            <h2 class="text-lg font-semibold text-[#F1F6F8]">
               {{ item.title }}
             </h2>
-            <p class="mt-1.5 text-xs leading-relaxed text-[#8a8a8a]">
+            <p class="mt-1.5 text-xs leading-relaxed text-[#AFBDC7]">
               {{ item.description }}
             </p>
           </div>
 
           <div
             aria-hidden="true"
-            class="pointer-events-none absolute -bottom-3 -right-2 text-[#ededed]/[0.05] transition-transform duration-300 group-hover:scale-105"
+            class="pointer-events-none absolute -bottom-3 -right-2 text-[#F1F6F8]/[0.05] transition-transform duration-300 group-hover:scale-105"
           >
             @switch (item.icon) {
               @case ('repairs') {

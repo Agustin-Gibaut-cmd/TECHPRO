@@ -1,10 +1,10 @@
-<main class="min-h-screen w-full bg-[#171717] text-[#ededed] flex items-center justify-center px-4">
+<main class="min-h-screen w-full bg-[#0C1218] text-[#F1F6F8] flex items-center justify-center px-4">
   <section class="w-full max-w-[380px]">
-    <h1 class="text-xl font-semibold tracking-tight text-[#ededed] text-center mb-6">
+    <h1 class="text-xl font-semibold tracking-tight text-[#F1F6F8] text-center mb-6">
       {{ registerMode ? 'Crear cuenta' : 'Iniciar sesión' }}
     </h1>
 
-    <div class="border-t border-[#262626] pt-5">
+    <div class="border-t border-[#33434F] pt-5">
       <form [formGroup]="authForm" (ngSubmit)="onSubmit()" class="space-y-3" novalidate>
         @if (registerMode) {
           <div>
@@ -15,7 +15,7 @@
               placeholder="Nombre"
               autocomplete="name"
               aria-label="Nombre"
-              class="w-full h-11 px-3.5 rounded-lg bg-[#242424] text-[#ededed] placeholder:text-[#737373] text-sm outline-none border border-transparent focus:border-[#3a3a3a] transition-colors disabled:opacity-60"
+              class="w-full h-11 px-3.5 rounded-lg bg-[#172129] text-[#F1F6F8] placeholder:text-[#AFBDC7] text-sm outline-none border border-transparent focus:border-[#33434F] transition-colors disabled:opacity-60"
             />
             @if (authForm.controls.name.touched && authForm.controls.name.invalid) {
               <p class="mt-1 text-xs text-red-400">Ingresá al menos 2 caracteres.</p>
@@ -31,7 +31,7 @@
             placeholder="Correo electrónico"
             autocomplete="email"
             aria-label="Correo electrónico"
-            class="w-full h-11 px-3.5 rounded-lg bg-[#242424] text-[#ededed] placeholder:text-[#737373] text-sm outline-none border border-transparent focus:border-[#3a3a3a] transition-colors disabled:opacity-60"
+            class="w-full h-11 px-3.5 rounded-lg bg-[#172129] text-[#F1F6F8] placeholder:text-[#AFBDC7] text-sm outline-none border border-transparent focus:border-[#33434F] transition-colors disabled:opacity-60"
           />
           @if (authForm.controls.email.touched && authForm.controls.email.invalid) {
             <p class="mt-1 text-xs text-red-400">Ingresá un correo electrónico válido.</p>
@@ -46,13 +46,13 @@
               placeholder="Contraseña"
               aria-label="Contraseña"
               [autocomplete]="registerMode ? 'new-password' : 'current-password'"
-              class="w-full h-11 pl-3.5 pr-11 rounded-lg bg-[#242424] text-[#ededed] placeholder:text-[#737373] text-sm outline-none border border-transparent focus:border-[#3a3a3a] transition-colors disabled:opacity-60"
+              class="w-full h-11 pl-3.5 pr-11 rounded-lg bg-[#172129] text-[#F1F6F8] placeholder:text-[#AFBDC7] text-sm outline-none border border-transparent focus:border-[#33434F] transition-colors disabled:opacity-60"
             />
             <button
               type="button"
               (click)="showPassword.set(!showPassword())"
               [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Ver contraseña'"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] cursor-pointer p-1"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-[#AFBDC7] cursor-pointer p-1"
             >
               @if (showPassword()) {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
@@ -86,7 +86,7 @@
                 placeholder="Repetir contraseña"
                 aria-label="Repetir contraseña"
                 autocomplete="new-password"
-                [class.border-emerald-700/70]="
+                [class.border-[#9AF3C7]/70]="
                   authForm.controls.confirmPassword.value &&
                   !authForm.hasError('passwordMismatch')
                 "
@@ -94,13 +94,13 @@
                   authForm.controls.confirmPassword.value &&
                   authForm.hasError('passwordMismatch')
                 "
-                class="w-full h-11 pl-3.5 pr-11 rounded-lg bg-[#242424] text-[#ededed] placeholder:text-[#737373] text-sm outline-none border border-transparent focus:border-[#3a3a3a] transition-colors disabled:opacity-60"
+                class="w-full h-11 pl-3.5 pr-11 rounded-lg bg-[#172129] text-[#F1F6F8] placeholder:text-[#AFBDC7] text-sm outline-none border border-transparent focus:border-[#33434F] transition-colors disabled:opacity-60"
               />
               <button
                 type="button"
                 (click)="showConfirmPassword.set(!showConfirmPassword())"
                 [attr.aria-label]="showConfirmPassword() ? 'Ocultar contraseña' : 'Ver contraseña'"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] cursor-pointer p-1"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-[#AFBDC7] cursor-pointer p-1"
               >
                 @if (showConfirmPassword()) {
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
@@ -136,10 +136,10 @@
           <button
             type="submit"
             [disabled]="isLoading"
-            class="w-full h-11 rounded-lg bg-[#ededed] text-[#171717] text-sm font-medium cursor-pointer active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            class="w-full h-11 rounded-lg bg-[#9AF3C7] text-[#0C1218] text-sm font-medium cursor-pointer active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             @if (isLoading) {
-              <span class="w-4 h-4 border-2 border-[#171717]/30 border-t-[#171717] rounded-full animate-spin"></span>
+              <span class="w-4 h-4 border-2 border-[#0C1218]/30 border-t-[#0C1218] rounded-full animate-spin"></span>
               <span>Conectando...</span>
             } @else {
               <span>{{ registerMode ? 'Crear cuenta y entrar' : 'Continuar' }}</span>
@@ -154,7 +154,7 @@
         type="button"
         (click)="modeToggle.emit()"
         [disabled]="isLoading"
-        class="text-xs text-[#737373] cursor-pointer disabled:opacity-50"
+        class="text-xs text-[#AFBDC7] cursor-pointer disabled:opacity-50"
       >
         {{
           registerMode
