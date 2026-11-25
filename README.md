@@ -1,8 +1,3 @@
- 
-<p align="center">
-  <img src="image.png" alt="TECHPRO Logo" width="300">
-</p>
-
 # TECHPRO
 
 **Sistema de gestión para talleres de reparación y servicio técnico.**
