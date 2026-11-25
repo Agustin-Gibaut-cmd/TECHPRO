@@ -1,3 +1,4 @@
+ 
 <p align="center">
   <img src="image.png" alt="TECHPRO Logo" width="300">
 </p>
@@ -12,9 +13,15 @@ TECHPRO es una aplicación web diseñada para centralizar y simplificar la gesti
 
 ## Tecnologías
 
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=python,django,docker,postgres,angular,ts,tailwind&theme=dark" alt="Tecnologías utilizadas en TECHPRO">
+</p>
+
 - **Frontend:** Angular y TypeScript.
+- **Estilos:** Tailwind CSS.
 - **Backend:** Python, Django y Django REST Framework.
 - **Base de datos:** PostgreSQL.
+- **Contenedores:** Docker.
 - **Autenticación:** JWT mediante cookies HttpOnly.
 
 ## Estructura del repositorio
@@ -30,7 +37,7 @@ TECHPRO/
 │       ├── inventory/  # Inventario
 │       ├── login/      # Inicio de sesión
 │       ├── repairs/    # Reparaciones
-│       ├── reports/    # Reportes y estadísticas
+│       ├── reports/   # Reportes y estadísticas
 │       ├── sales/      # Ventas
 │       └── suppliers/  # Proveedores
 │
@@ -53,6 +60,7 @@ TECHPRO/
 - Python 3.10 o superior.
 - PostgreSQL.
 - Node.js y npm.
+- Docker y Docker Compose (opcional).
 
 ## Cómo levantar el proyecto
 
@@ -97,7 +105,7 @@ python manage.py migrate
 python manage.py runserver 127.0.0.1:8000
 ```
 
-Backend: http://127.0.0.1:8000/api/
+Backend: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
 
 Con Docker, desde la raíz del repositorio, el backend y PostgreSQL quedan en segundo plano:
 
@@ -105,7 +113,9 @@ Con Docker, desde la raíz del repositorio, el backend y PostgreSQL quedan en se
 docker compose up -d --build
 ```
 
-API: http://localhost:8000/api/ . El detalle está en `docker.md`.
+API: [http://localhost:8000/api/](http://localhost:8000/api/)
+
+El detalle está en `docker.md`.
 
 ### 3. Iniciar el frontend
 
@@ -118,7 +128,7 @@ npm install
 npm start
 ```
 
-Frontend: http://localhost:4200
+Frontend: [http://localhost:4200](http://localhost:4200)
 
 ## Endpoints de la API
 
@@ -179,7 +189,7 @@ Frontend: http://localhost:4200
 | --- | --- | --- |
 | `GET` | `/api/reports/summary/` | Retorna estadísticas consolidadas e indicadores para los gráficos del dashboard (ventas mensuales, productos destacados, stock bajo y reparaciones). |
 
-### Salud del Sistema
+### Salud del sistema
 
 | Método | Endpoint | Descripción |
 | --- | --- | --- |
