@@ -74,9 +74,16 @@ function Run-Step {
 
 # 4. Comprobaciones de Backend
 if (-not $SkipBackend) {
+    $Coverage = Join-Path $ServerDir ".venv\Scripts\coverage.exe"
     Run-Step -Title "Django System Check" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "check")
     Run-Step -Title "Django Migration Consistency" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "makemigrations", "--check", "--dry-run")
-    Run-Step -Title "Django API Tests (75 pruebas)" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "test", "tests")
+
+    if (Test-Path $Coverage) {
+        Run-Step -Title "Django API Tests + Coverage" -WorkDir $ServerDir -Command $Coverage -Args @("run", "--branch", "manage.py", "test")
+        Run-Step -Title "Coverage Report" -WorkDir $ServerDir -Command $Coverage -Args @("report", "-m")
+    } else {
+        Run-Step -Title "Django API Tests" -WorkDir $ServerDir -Command $Python -Args @("manage.py", "test", "tests")
+    }
 }
 
 # 5. Comprobaciones de Frontend

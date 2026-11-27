@@ -2,193 +2,227 @@
 
 **Sistema de gestión para talleres de reparación y servicio técnico.**
 
-## Descripción
+TECHPRO centraliza clientes, órdenes de reparación, inventario, proveedores,
+ventas y reportes con indicadores. El backend expone una API REST y el frontend
+es una SPA con autenticación JWT en cookies HttpOnly.
 
-TECHPRO es una aplicación web diseñada para centralizar y simplificar la gestión de talleres de reparación y servicio técnico. Permite administrar clientes, órdenes de reparación, inventario, proveedores, ventas y consultar reportes con indicadores y gráficos basados en los datos registrados.
+## Stack
 
-## Tecnologías
+- **Frontend:** Angular 22, TypeScript y Tailwind CSS.
+- **Backend:** Python, Django 5.2 y Django REST Framework.
+- **Base de datos:** PostgreSQL 16 (SQLite solo para desarrollo y pruebas).
+- **Autenticación:** SimpleJWT en cookies HttpOnly + protección CSRF.
+- **Contenedores:** Docker Compose.
 
-<p align="center">
-  <img src="https://skillicons.dev/icons?i=python,django,docker,postgres,angular,ts,tailwind&theme=dark" alt="Tecnologías utilizadas en TECHPRO">
-</p>
-
-- **Frontend:** Angular y TypeScript.
-- **Estilos:** Tailwind CSS.
-- **Backend:** Python, Django y Django REST Framework.
-- **Base de datos:** PostgreSQL.
-- **Contenedores:** Docker.
-- **Autenticación:** JWT mediante cookies HttpOnly.
-
-## Estructura del repositorio
+## Estructura
 
 ```text
 TECHPRO/
-│
-├── client/
-│   └── src/app/
-│       ├── auth-form/   # Acceso y registro
-│       ├── customers/   # Clientes
-│       ├── dashboard/  # Panel principal
-│       ├── inventory/  # Inventario
-│       ├── login/      # Inicio de sesión
-│       ├── repairs/    # Reparaciones
-│       ├── reports/   # Reportes y estadísticas
-│       ├── sales/      # Ventas
-│       └── suppliers/  # Proveedores
-│
-├── server/
-│   ├── accounts/       # Autenticación y usuarios
-│   ├── repairs/        # API de reparaciones
-│   ├── workshop/       # Módulos de gestión
-│   ├── config/         # Configuración de Django
-│   ├── tests/          # Pruebas del backend
-│   └── requirements.txt
-│
-├── tests/              # Validaciones generales
-├── database.sql        # Referencia de tablas
-├── image.png           # Logo de presentación
-└── README.md
+├── client/                 # Angular SPA
+│   └── src/app/            # login, dashboard, repairs, inventory, customers...
+├── server/                 # Django + DRF
+│   ├── accounts/           # Autenticación, roles y usuarios
+│   ├── repairs/            # Órdenes de reparación
+│   ├── workshop/           # Clientes, proveedores, inventario, ventas, reportes
+│   ├── config/             # Settings, entorno y base de datos
+│   ├── tests/              # Suite AUT-BE
+│   └── .env.example        # Plantilla de variables (nunca subir .env)
+├── testing/                # Plan, casos EF-01..EF-12 y suites AUT-API/E2E/ACC
+├── tests/                  # Script de validación integral
+├── docker-compose.yml
+└── database.sql
 ```
 
 ## Requisitos
 
 - Python 3.10 o superior.
-- PostgreSQL.
-- Node.js y npm.
+- Node.js 18+ y npm.
+- PostgreSQL 16 (o Docker).
 - Docker y Docker Compose (opcional).
 
-## Cómo levantar el proyecto
+## Variables de entorno
 
-### 1. Clonar el repositorio
-
-```bash
-git clone URL_DEL_REPOSITORIO
-cd TECHPRO
-```
-
-### 2. Iniciar el backend
-
-Desde una terminal:
+Crear `server/.env` a partir de la plantilla:
 
 ```powershell
 cd server
-
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install -r requirements.txt
-
 Copy-Item .env.example .env
 ```
 
-Configurar las variables de entorno y las credenciales de PostgreSQL en `server/.env`.
+Completar como mínimo:
 
-Generar dos claves secretas diferentes:
+| Variable | Uso | Ejemplo |
+| --- | --- | --- |
+| `DJANGO_SECRET_KEY` | Clave de Django | Secreto aleatorio de 64+ caracteres |
+| `JWT_SIGNING_KEY` | Firma de tokens JWT | Otro secreto aleatorio distinto |
+| `DEBUG` | Modo desarrollo | `true` |
+| `ENVIRONMENT` | Entorno | `development` |
+| `DJANGO_ALLOWED_HOSTS` | Hosts permitidos | `localhost,127.0.0.1` |
+| `CORS_ALLOWED_ORIGINS` | Origen del frontend | `http://localhost:4200` |
+| `CSRF_TRUSTED_ORIGINS` | Origen confiable CSRF | `http://localhost:4200` |
+| `DB_ENGINE` | Motor | `postgresql` |
+| `DB_NAME` | Base de datos | `techpro` |
+| `DB_USER` | Usuario | `techpro` |
+| `DB_PASSWORD` | Contraseña | Contraseña local |
+| `DB_HOST` | Host | `127.0.0.1` |
+| `DB_PORT` | Puerto | `5432` |
+| `DB_SSLMODE` | SSL | `prefer` en local |
+| `SQLITE_DB_NAME` | Solo pruebas | `test_local.sqlite3` |
+
+Generar claves seguras:
 
 ```powershell
 python -c "import secrets; print(secrets.token_urlsafe(64))"
 ```
 
-Configurar una en `DJANGO_SECRET_KEY` y otra en `JWT_SIGNING_KEY`.
+No commitear `server/.env`. El archivo está excluido por `.gitignore`.
 
-En `server/.env`, para este arranque local usá `DB_HOST=127.0.0.1` y `DB_SSLMODE=prefer`.
+## Base de datos y backend
 
-Aplicar las migraciones e iniciar el servidor:
+### Opción A: Docker Compose
 
-```powershell
-python manage.py migrate
-python manage.py runserver 127.0.0.1:8000
-```
-
-Backend: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
-
-Con Docker, desde la raíz del repositorio, el backend y PostgreSQL quedan en segundo plano:
+Desde la raíz, con `server/.env` configurado:
 
 ```powershell
 docker compose up -d --build
 ```
 
 API: [http://localhost:8000/api/](http://localhost:8000/api/)
+Salud: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
 
-El detalle está en `docker.md`.
+### Opción B: local
 
-### 3. Iniciar el frontend
+Con PostgreSQL en ejecución y `server/.env` apuntando a `127.0.0.1`:
 
-Abrir una segunda terminal:
+```powershell
+cd server
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_test_users
+python manage.py runserver 127.0.0.1:8000
+```
+
+Para pruebas rápidas sin PostgreSQL, en la misma terminal:
+
+```powershell
+$env:DEBUG = "true"
+$env:ENVIRONMENT = "development"
+$env:DB_ENGINE = "sqlite"
+$env:SQLITE_DB_NAME = "test_local.sqlite3"
+python manage.py migrate
+```
+
+## Frontend
 
 ```powershell
 cd client
-
 npm install
 npm start
 ```
 
 Frontend: [http://localhost:4200](http://localhost:4200)
 
-## Endpoints de la API
+## Usuarios de prueba por rol
+
+El comando es idempotente y solo para desarrollo:
+
+```powershell
+cd server
+python manage.py seed_test_users
+```
+
+| Rol | Email | Contraseña | Acceso |
+| --- | --- | --- | --- |
+| Administrador | `admin@techpro.local` | `TechproTest!2026` | Completo |
+| Técnico | `tecnico@techpro.local` | `TechproTest!2026` | Completo |
+| Vendedor | `vendedor@techpro.local` | `TechproTest!2026` | Completo |
+| Consulta | `consulta@techpro.local` | `TechproTest!2026` | Solo lectura |
+
+Cambiar la contraseña con `--password` o `TECHPRO_TEST_PASSWORD`. Con
+`DEBUG=false` el comando exige `--force`.
+
+## Suites de prueba
+
+El índice completo está en [`testing/Testing.md`](testing/Testing.md).
+
+### AUT-BE (Django + coverage)
+
+```powershell
+cd server
+coverage run --branch manage.py test
+coverage report -m
+```
+
+Cobertura esperada: ≥ 90 % de ramas. Configuración en `server/.coveragerc`.
+
+### AUT-API (contrato HTTP)
+
+Con el backend levantado y los usuarios creados:
+
+```powershell
+# En la terminal del servidor, para evitar 429 por el rate limit de login
+$env:THROTTLE_RATE_LOGIN = "100/minute"
+python manage.py runserver 127.0.0.1:8000
+
+# En otra terminal, desde la raíz
+python -m unittest discover -s testing/api -v
+```
+
+Variables: `TECHPRO_API_URL`, `TECHPRO_TEST_EMAIL`, `TECHPRO_TEST_PASSWORD`.
+
+### AUT-E2E (Playwright)
+
+Con backend y frontend levantados:
+
+```powershell
+cd testing/e2e
+npm install
+npx playwright install chromium
+npm test
+```
+
+Variables: `TECHPRO_WEB_URL`, `TECHPRO_TEST_EMAIL`, `TECHPRO_TEST_PASSWORD`.
+
+### ACC (aceptación manual)
+
+Seguir el checklist [`testing/ACC.md`](testing/ACC.md) y registrar evidencias en
+`testing/evidencias/`.
+
+### Validación integral
+
+```powershell
+.\tests\run-validation.ps1
+```
+
+## Endpoints principales
 
 ### Autenticación (`/api/auth/`)
 
 | Método | Endpoint | Descripción |
 | --- | --- | --- |
-| `GET` | `/api/auth/csrf/` | Obtiene el token CSRF para solicitudes de escritura. |
-| `POST` | `/api/auth/register/` | Registra una cuenta nueva y emite cookies JWT HttpOnly. |
-| `POST` | `/api/auth/login/` | Inicia sesión y emite cookies JWT HttpOnly. |
-| `POST` | `/api/auth/token/refresh/` | Renueva y rota los tokens JWT sin exponerlos en el body. |
-| `GET` | `/api/auth/me/` | Obtiene los datos de la cuenta actualmente autenticada. |
-| `POST` | `/api/auth/logout/` | Revoca la sesión y elimina las cookies HttpOnly. |
+| `GET` | `/api/auth/csrf/` | Token CSRF para escrituras |
+| `POST` | `/api/auth/register/` | Registro y cookies JWT |
+| `POST` | `/api/auth/login/` | Login y cookies JWT |
+| `POST` | `/api/auth/token/refresh/` | Rotación de tokens |
+| `GET` | `/api/auth/me/` | Usuario autenticado |
+| `POST` | `/api/auth/logout/` | Revocación y cierre de sesión |
 
-### Reparaciones (`/api/repairs/`)
+### Recursos privados
 
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/repairs/` | Lista las órdenes de reparación del usuario actual. |
-| `POST` | `/api/repairs/` | Registra una nueva orden de reparación. |
-| `PUT`, `PATCH` | `/api/repairs/<id>/` | Actualiza los datos o el estado de una reparación existente. |
+| Recurso | Endpoints |
+| --- | --- |
+| Reparaciones | `/api/repairs/`, `/api/repairs/<id>/` |
+| Clientes | `/api/customers/`, `/api/customers/<id>/` |
+| Proveedores | `/api/suppliers/`, `/api/suppliers/<id>/` |
+| Inventario | `/api/inventory/`, `/api/inventory/<id>/` |
+| Ventas | `/api/sales/`, `/api/sales/<id>/` |
+| Reportes | `/api/reports/summary/` |
+| Salud | `/api/health/` |
 
-### Clientes (`/api/customers/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/customers/` | Lista los clientes registrados por el usuario. |
-| `POST` | `/api/customers/` | Registra un nuevo cliente. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/customers/<id>/` | Consulta, edita o elimina un cliente específico. |
-
-### Inventario (`/api/inventory/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/inventory/` | Lista todos los productos y repuestos en inventario. |
-| `POST` | `/api/inventory/` | Agrega un nuevo producto o repuesto al inventario. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/inventory/<id>/` | Consulta, edita o elimina un producto de inventario. |
-
-### Proveedores (`/api/suppliers/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/suppliers/` | Lista los proveedores registrados por el usuario. |
-| `POST` | `/api/suppliers/` | Registra un nuevo proveedor. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/suppliers/<id>/` | Consulta, edita o elimina un proveedor. |
-
-### Ventas (`/api/sales/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/sales/` | Lista las ventas registradas ordenadas cronológicamente. |
-| `POST` | `/api/sales/` | Registra una nueva venta de producto. |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/sales/<id>/` | Consulta, modifica o elimina un registro de venta. |
-
-### Reportes (`/api/reports/`)
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/reports/summary/` | Retorna estadísticas consolidadas e indicadores para los gráficos del dashboard (ventas mensuales, productos destacados, stock bajo y reparaciones). |
-
-### Salud del sistema
-
-| Método | Endpoint | Descripción |
-| --- | --- | --- |
-| `GET` | `/api/health/` | Comprueba el estado y disponibilidad del servicio backend. |
+Todos los recursos privados exigen autenticación y filtran los datos por
+`created_by`. El rol `consulta` solo puede ejecutar `GET`, `HEAD` y `OPTIONS`.
 
 ---
 

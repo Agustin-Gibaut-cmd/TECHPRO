@@ -1,210 +1,148 @@
-"""Modelos de datos para la gestión comercial y operativa del taller.
-
-Engloba las entidades esenciales para la operación diaria:
-- Customer: Directorio de clientes con datos de contacto.
-- Supplier: Proveedores de repuestos e insumos.
-- InventoryItem: Control de stock, repuestos, precios y niveles mínimos.
-- Sale: Registro de ventas directas de productos o accesorios.
-"""
+"""Pruebas unitarias de métodos en modelos de workshop."""
 
 from decimal import Decimal
+from typing import Any
 
-from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
+from django.test import TestCase
 
-CONTACT_NAME_MAX_LENGTH = 120
-PHONE_MAX_LENGTH = 32
-EMAIL_MAX_LENGTH = 254
-ADDRESS_MAX_LENGTH = 200
-NOTES_MAX_LENGTH = 1000
+from workshop.models import Customer, InventoryItem, Sale, Supplier
 
-SKU_MAX_LENGTH = 40
-CATEGORY_MAX_LENGTH = 80
-DESCRIPTION_MAX_LENGTH = 1000
-PRODUCT_NAME_MAX_LENGTH = 120
-
-PRICE_MAX_DIGITS = 10
-PRICE_DECIMAL_PLACES = 2
-MIN_MONEY_VALUE = Decimal("0.00")
+User = get_user_model()
 
 
-def _normalize_spaced_text(value: str | None) -> str:
-    """Colapsa espacios en blanco múltiples y recorta extremos."""
-    return " ".join((value or "").split())
+class BaseWorkshopModelTestCase(TestCase):
+    """Base POO con creación de usuario y aserciones compartidas para modelos."""
+
+    user: AbstractBaseUser
+
+    def setUp(self) -> None:
+        # Arrange
+        self.user = self._build_user()
+
+    def _build_user(self) -> AbstractBaseUser:
+        return User.objects.create_user(
+            username="tech_user",
+            password="Password123!",
+        )
+
+    def _assert_clean_and_str(
+        self,
+        instance: models.Model,
+        expected_fields: dict[str, Any],
+        expected_str: str,
+    ) -> None:
+        # Act
+        instance.full_clean()
+
+        # Assert
+        for field, expected_value in expected_fields.items():
+            with self.subTest(field=field):
+                self.assertEqual(getattr(instance, field), expected_value)
+        self.assertEqual(str(instance), expected_str)
 
 
-class Customer(models.Model):
-    """Cliente del taller al que se le asocian órdenes de servicio y ventas."""
+class CustomerModelTests(BaseWorkshopModelTestCase):
+    """Verifica normalización y representación de Customer."""
 
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    phone = models.CharField(max_length=PHONE_MAX_LENGTH)
-    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True)
-    address = models.CharField(max_length=ADDRESS_MAX_LENGTH, blank=True)
-    notes = models.TextField(max_length=NOTES_MAX_LENGTH, blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="customers",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    def test_clean_and_str(self) -> None:
+        # Arrange
+        customer = Customer(
+            name="  Juan   Pérez  ",
+            phone="  351   1234567  ",
+            email="  JUAN@Example.COM  ",
+            address="  Av.   Colón  100 ",
+            created_by=self.user,
+        )
 
-    class Meta:
-        ordering = ("name", "id")
-        indexes = [
-            models.Index(
-                fields=("created_by", "name"),
-                name="customer_owner_name_idx",
-            ),
-        ]
-
-    def clean(self) -> None:
-        self.name = _normalize_spaced_text(self.name)
-        self.phone = _normalize_spaced_text(self.phone)
-        self.email = (self.email or "").strip().lower()
-        self.address = _normalize_spaced_text(self.address)
-        super().clean()
-
-    def __str__(self) -> str:
-        return self.name
+        # Act & Assert
+        self._assert_clean_and_str(
+            instance=customer,
+            expected_fields={
+                "name": "Juan Pérez",
+                "phone": "351 1234567",
+                "email": "juan@example.com",
+                "address": "Av. Colón 100",
+            },
+            expected_str="Juan Pérez",
+        )
 
 
-class Supplier(models.Model):
-    """Proveedor comercial que suministra repuestos y consumibles para el taller."""
+class SupplierModelTests(BaseWorkshopModelTestCase):
+    """Verifica normalización y representación de Supplier."""
 
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    phone = models.CharField(max_length=PHONE_MAX_LENGTH)
-    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True)
-    address = models.CharField(max_length=ADDRESS_MAX_LENGTH, blank=True)
-    notes = models.TextField(max_length=NOTES_MAX_LENGTH, blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="suppliers",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    def test_clean_and_str(self) -> None:
+        # Arrange
+        supplier = Supplier(
+            name="  Repuestos   Córdoba  ",
+            phone="  351   7654321 ",
+            email="  VENTAS@Proveedor.COM ",
+            address="  Bv.   San Juan  500 ",
+            created_by=self.user,
+        )
 
-    class Meta:
-        ordering = ("name", "id")
-        indexes = [
-            models.Index(
-                fields=("created_by", "name"),
-                name="supplier_owner_name_idx",
-            ),
-        ]
-
-    def clean(self) -> None:
-        self.name = _normalize_spaced_text(self.name)
-        self.phone = _normalize_spaced_text(self.phone)
-        self.email = (self.email or "").strip().lower()
-        self.address = _normalize_spaced_text(self.address)
-        super().clean()
-
-    def __str__(self) -> str:
-        return self.name
+        # Act & Assert
+        self._assert_clean_and_str(
+            instance=supplier,
+            expected_fields={
+                "name": "Repuestos Córdoba",
+                "phone": "351 7654321",
+                "email": "ventas@proveedor.com",
+                "address": "Bv. San Juan 500",
+            },
+            expected_str="Repuestos Córdoba",
+        )
 
 
-class InventoryItem(models.Model):
-    """Artículo o repuesto del inventario con seguimiento de existencias y precio."""
+class InventoryItemModelTests(BaseWorkshopModelTestCase):
+    """Verifica normalización y representación de InventoryItem."""
 
-    name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH)
-    sku = models.CharField(max_length=SKU_MAX_LENGTH)
-    category = models.CharField(max_length=CATEGORY_MAX_LENGTH, blank=True)
-    description = models.TextField(max_length=DESCRIPTION_MAX_LENGTH, blank=True)
-    quantity = models.PositiveIntegerField(default=0)
-    min_stock = models.PositiveIntegerField(default=0)
-    unit_price = models.DecimalField(
-        max_digits=PRICE_MAX_DIGITS,
-        decimal_places=PRICE_DECIMAL_PLACES,
-        default=MIN_MONEY_VALUE,
-        validators=[MinValueValidator(MIN_MONEY_VALUE)],
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="inventory_items",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    def test_clean_and_str(self) -> None:
+        # Arrange
+        item = InventoryItem(
+            name="  Pantalla   OLED  ",
+            sku="  scr-001  ",
+            category="  Repuestos   Móviles ",
+            quantity=5,
+            min_stock=2,
+            unit_price=Decimal("45000.00"),
+            created_by=self.user,
+        )
 
-    class Meta:
-        ordering = ("name", "id")
-        constraints = [
-            models.UniqueConstraint(
-                fields=("created_by", "sku"),
-                name="inventory_owner_sku_unique",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(unit_price__gte=0),
-                name="inventory_unit_price_nonnegative",
-            ),
-        ]
-        indexes = [
-            models.Index(
-                fields=("created_by", "name"),
-                name="inventory_owner_name_idx",
-            ),
-        ]
-
-    def clean(self) -> None:
-        self.name = _normalize_spaced_text(self.name)
-        self.sku = (self.sku or "").strip().upper()
-        self.category = _normalize_spaced_text(self.category)
-        super().clean()
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.sku})"
+        # Act & Assert
+        self._assert_clean_and_str(
+            instance=item,
+            expected_fields={
+                "name": "Pantalla OLED",
+                "sku": "SCR-001",
+                "category": "Repuestos Móviles",
+            },
+            expected_str="Pantalla OLED (SCR-001)",
+        )
 
 
-class Sale(models.Model):
-    """Transacción de venta de productos o insumos realizada por el taller."""
+class SaleModelTests(BaseWorkshopModelTestCase):
+    """Verifica normalización, cálculo de total y representación de Sale."""
 
-    customer_name = models.CharField(max_length=CONTACT_NAME_MAX_LENGTH, blank=True)
-    product_name = models.CharField(max_length=PRODUCT_NAME_MAX_LENGTH)
-    quantity = models.PositiveIntegerField()
-    unit_price = models.DecimalField(
-        max_digits=PRICE_MAX_DIGITS,
-        decimal_places=PRICE_DECIMAL_PLACES,
-        validators=[MinValueValidator(MIN_MONEY_VALUE)],
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="sales",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    def test_clean_total_and_str(self) -> None:
+        # Arrange
+        sale = Sale(
+            customer_name="  María   Gómez ",
+            product_name="  Cargador   USB-C ",
+            quantity=3,
+            unit_price=Decimal("12000.00"),
+            created_by=self.user,
+        )
 
-    class Meta:
-        ordering = ("-created_at", "-id")
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(quantity__gt=0),
-                name="sale_quantity_positive",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(unit_price__gte=0),
-                name="sale_unit_price_nonnegative",
-            ),
-        ]
-        indexes = [
-            models.Index(
-                fields=("created_by", "created_at"),
-                name="sale_owner_created_idx",
-            ),
-        ]
-
-    @property
-    def total(self) -> Decimal:
-        """Calcula el importe total de la venta multiplicando precio unitario y cantidad."""
-        return self.unit_price * self.quantity
-
-    def clean(self) -> None:
-        self.customer_name = _normalize_spaced_text(self.customer_name)
-        self.product_name = _normalize_spaced_text(self.product_name)
-        super().clean()
-
-    def __str__(self) -> str:
-        return f"{self.product_name} x {self.quantity}"
+        # Act & Assert
+        self._assert_clean_and_str(
+            instance=sale,
+            expected_fields={
+                "customer_name": "María Gómez",
+                "product_name": "Cargador USB-C",
+                "total": Decimal("36000.00"),
+            },
+            expected_str="Cargador USB-C x 3",
+        )

@@ -5,11 +5,12 @@ from typing import Any
 from django.db import IntegrityError, transaction
 from django.db.models import Model, QuerySet
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
+
+from accounts.roles import RoleAccessPermission
 
 from .models import Customer, InventoryItem, Sale, Supplier
 from .reporting import get_dashboard_summary
@@ -65,7 +66,7 @@ class CustomerListCreateView(OwnerScopedMixin, ListCreateAPIView):
 
     model = Customer
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def perform_create(self, serializer: CustomerSerializer) -> None:
         serializer.save(created_by=self.request.user)
@@ -76,7 +77,7 @@ class CustomerDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
 
     model = Customer
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
 
 class SupplierListCreateView(OwnerScopedMixin, ListCreateAPIView):
@@ -84,7 +85,7 @@ class SupplierListCreateView(OwnerScopedMixin, ListCreateAPIView):
 
     model = Supplier
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def perform_create(self, serializer: SupplierSerializer) -> None:
         serializer.save(created_by=self.request.user)
@@ -95,7 +96,7 @@ class SupplierDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
 
     model = Supplier
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
 
 class InventoryListCreateView(OwnerScopedMixin, ListCreateAPIView):
@@ -103,7 +104,7 @@ class InventoryListCreateView(OwnerScopedMixin, ListCreateAPIView):
 
     model = InventoryItem
     serializer_class = InventoryItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def perform_create(self, serializer: InventoryItemSerializer) -> None:
         _save_inventory_item(serializer, created_by=self.request.user)
@@ -114,7 +115,7 @@ class InventoryDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
 
     model = InventoryItem
     serializer_class = InventoryItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def perform_update(self, serializer: InventoryItemSerializer) -> None:
         _save_inventory_item(serializer)
@@ -125,7 +126,7 @@ class SaleListCreateView(OwnerScopedMixin, ListCreateAPIView):
 
     model = Sale
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def perform_create(self, serializer: SaleSerializer) -> None:
         serializer.save(created_by=self.request.user)
@@ -136,13 +137,13 @@ class SaleDetailView(OwnerScopedMixin, RetrieveUpdateDestroyAPIView):
 
     model = Sale
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
 
 class ReportSummaryView(APIView):
     """Retorna las métricas consolidadas del taller para el usuario autenticado."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleAccessPermission]
 
     def get(self, request: Request) -> Response:
         return Response(get_dashboard_summary(request.user))

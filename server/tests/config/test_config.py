@@ -24,10 +24,13 @@ class HealthCheckApiTests(SimpleTestCase):
     """Verifica la disponibilidad del endpoint público de salud."""
 
     def test_health_check_returns_ok_status(self):
-        """El endpoint /api/health/ responde 200 OK y no permite caché."""
+        # Arrange
         client = APIClient()
+
+        # Act
         response = client.get("/api/health/")
 
+        # Assert
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {"status": "ok"})
         self.assertIn("no-store", response.get("Cache-Control", ""))
@@ -37,23 +40,27 @@ class ApiNoStoreMiddlewareTests(SimpleTestCase):
     """Verifica que ApiNoStoreMiddleware aplique no-store solo en rutas de API."""
 
     def test_middleware_patches_cache_control_on_api_routes(self):
-        """Agrega no-store a las respuestas bajo /api/."""
+        # Arrange
         middleware = ApiNoStoreMiddleware(lambda _req: HttpResponse("ok"))
         request = HttpRequest()
         request.path = "/api/repairs/"
 
+        # Act
         response = middleware(request)
 
+        # Assert
         self.assertIn("no-store", response.get("Cache-Control", ""))
 
     def test_middleware_preserves_cache_control_on_non_api_routes(self):
-        """No fuerza no-store en rutas fuera del prefijo del API."""
+        # Arrange
         middleware = ApiNoStoreMiddleware(lambda _req: HttpResponse("ok"))
         request = HttpRequest()
         request.path = "/static/styles.css"
 
+        # Act
         response = middleware(request)
 
+        # Assert
         self.assertNotIn("no-store", response.get("Cache-Control", ""))
 
 
@@ -61,45 +68,91 @@ class EnvParserTests(SimpleTestCase):
     """Verifica el parseo tipado y estricto de variables de entorno."""
 
     def test_env_str_returns_trimmed_text_or_default(self):
-        """Limpia espacios laterales y respeta el valor por defecto."""
-        with patch.dict("os.environ", {"TEST_VAR": "  hola taller  "}):
-            self.assertEqual(env_str("TEST_VAR"), "hola taller")
-        self.assertEqual(env_str("NON_EXISTENT", default="fallback"), "fallback")
+        # Arrange
+        environment = {"TEST_VAR": "  hola taller  "}
+
+        # Act
+        with patch.dict("os.environ", environment):
+            value = env_str("TEST_VAR")
+        fallback = env_str("NON_EXISTENT", default="fallback")
+
+        # Assert
+        self.assertEqual(value, "hola taller")
+        self.assertEqual(fallback, "fallback")
 
     def test_env_bool_parses_truthy_values(self):
-        """Interpreta valores afirmativos estándar como True."""
-        for value in ("1", "true", "True", "YES", "on"):
+        # Arrange
+        values = ("1", "true", "True", "YES", "on")
+
+        # Act
+        results = []
+        for value in values:
             with patch.dict("os.environ", {"TEST_BOOL": value}):
-                self.assertTrue(env_bool("TEST_BOOL"))
+                results.append(env_bool("TEST_BOOL"))
+
+        # Assert
+        self.assertTrue(all(results))
 
     def test_env_bool_parses_falsy_values(self):
-        """Interpreta valores negativos estándar como False."""
-        for value in ("0", "false", "False", "NO", "off"):
+        # Arrange
+        values = ("0", "false", "False", "NO", "off")
+
+        # Act
+        results = []
+        for value in values:
             with patch.dict("os.environ", {"TEST_BOOL": value}):
-                self.assertFalse(env_bool("TEST_BOOL"))
+                results.append(env_bool("TEST_BOOL"))
+
+        # Assert
+        self.assertFalse(any(results))
 
     def test_env_bool_raises_on_invalid_string(self):
-        """Lanza ImproperlyConfigured ante valores booleanos inválidos."""
-        with patch.dict("os.environ", {"TEST_BOOL": "talvez"}):
-            with self.assertRaises(ImproperlyConfigured):
+        # Arrange
+        environment = {"TEST_BOOL": "talvez"}
+
+        # Act
+        with patch.dict("os.environ", environment):
+            with self.assertRaises(ImproperlyConfigured) as ctx:
                 env_bool("TEST_BOOL")
 
+        # Assert
+        self.assertIn("booleano", str(ctx.exception))
+
     def test_env_int_parses_valid_integers(self):
-        """Convierte enteros válidos y devuelve el default si falta la variable."""
-        with patch.dict("os.environ", {"TEST_INT": "  42  "}):
-            self.assertEqual(env_int("TEST_INT", 0), 42)
-        self.assertEqual(env_int("NON_EXISTENT_INT", 99), 99)
+        # Arrange
+        environment = {"TEST_INT": "  42  "}
+
+        # Act
+        with patch.dict("os.environ", environment):
+            value = env_int("TEST_INT", 0)
+        fallback = env_int("NON_EXISTENT_INT", 99)
+
+        # Assert
+        self.assertEqual(value, 42)
+        self.assertEqual(fallback, 99)
 
     def test_env_int_raises_on_invalid_number(self):
-        """Lanza ImproperlyConfigured si el valor entero no es numérico."""
-        with patch.dict("os.environ", {"TEST_INT": "cuarenta_y_dos"}):
-            with self.assertRaises(ImproperlyConfigured):
+        # Arrange
+        environment = {"TEST_INT": "cuarenta_y_dos"}
+
+        # Act
+        with patch.dict("os.environ", environment):
+            with self.assertRaises(ImproperlyConfigured) as ctx:
                 env_int("TEST_INT", 0)
 
+        # Assert
+        self.assertIn("entero", str(ctx.exception))
+
     def test_env_list_splits_and_trims(self):
-        """Separa por comas, recorta espacios y omite vacíos."""
-        with patch.dict("os.environ", {"TEST_LIST": " a, b , , c "}):
-            self.assertEqual(env_list("TEST_LIST"), ["a", "b", "c"])
+        # Arrange
+        environment = {"TEST_LIST": " a, b , , c "}
+
+        # Act
+        with patch.dict("os.environ", environment):
+            values = env_list("TEST_LIST")
+
+        # Assert
+        self.assertEqual(values, ["a", "b", "c"])
 
 
 class SecretKeysSecurityTests(SimpleTestCase):
@@ -110,53 +163,64 @@ class SecretKeysSecurityTests(SimpleTestCase):
         self.valid_key_2 = secrets.token_urlsafe(48)
 
     def test_load_secret_keys_succeeds_with_valid_distinct_keys(self):
-        """Acepta dos claves fuertes y distintas."""
-        with patch.dict(
-            "os.environ",
-            {
-                "DJANGO_SECRET_KEY": self.valid_key_1,
-                "JWT_SIGNING_KEY": self.valid_key_2,
-            },
-        ):
+        # Arrange
+        environment = {
+            "DJANGO_SECRET_KEY": self.valid_key_1,
+            "JWT_SIGNING_KEY": self.valid_key_2,
+        }
+
+        # Act
+        with patch.dict("os.environ", environment):
             key_1, key_2 = load_secret_keys()
-            self.assertEqual(key_1, self.valid_key_1)
-            self.assertEqual(key_2, self.valid_key_2)
+
+        # Assert
+        self.assertEqual(key_1, self.valid_key_1)
+        self.assertEqual(key_2, self.valid_key_2)
 
     def test_load_secret_keys_rejects_short_django_key(self):
-        """Rechaza una DJANGO_SECRET_KEY corta."""
-        with patch.dict(
-            "os.environ",
-            {
-                "DJANGO_SECRET_KEY": "corta",
-                "JWT_SIGNING_KEY": self.valid_key_2,
-            },
-        ):
-            with self.assertRaises(ImproperlyConfigured):
+        # Arrange
+        environment = {
+            "DJANGO_SECRET_KEY": "corta",
+            "JWT_SIGNING_KEY": self.valid_key_2,
+        }
+
+        # Act
+        with patch.dict("os.environ", environment):
+            with self.assertRaises(ImproperlyConfigured) as ctx:
                 load_secret_keys()
+
+        # Assert
+        self.assertIn("DJANGO_SECRET_KEY", str(ctx.exception))
 
     def test_load_secret_keys_rejects_placeholder_prefix(self):
-        """Rechaza claves con prefijo inseguro de plantilla."""
-        with patch.dict(
-            "os.environ",
-            {
-                "DJANGO_SECRET_KEY": f"replace-with-{self.valid_key_1}",
-                "JWT_SIGNING_KEY": self.valid_key_2,
-            },
-        ):
-            with self.assertRaises(ImproperlyConfigured):
+        # Arrange
+        environment = {
+            "DJANGO_SECRET_KEY": f"replace-with-{self.valid_key_1}",
+            "JWT_SIGNING_KEY": self.valid_key_2,
+        }
+
+        # Act
+        with patch.dict("os.environ", environment):
+            with self.assertRaises(ImproperlyConfigured) as ctx:
                 load_secret_keys()
 
+        # Assert
+        self.assertIn("DJANGO_SECRET_KEY", str(ctx.exception))
+
     def test_load_secret_keys_rejects_identical_keys(self):
-        """Exige que JWT_SIGNING_KEY sea distinta a DJANGO_SECRET_KEY."""
-        with patch.dict(
-            "os.environ",
-            {
-                "DJANGO_SECRET_KEY": self.valid_key_1,
-                "JWT_SIGNING_KEY": self.valid_key_1,
-            },
-        ):
-            with self.assertRaises(ImproperlyConfigured):
+        # Arrange
+        environment = {
+            "DJANGO_SECRET_KEY": self.valid_key_1,
+            "JWT_SIGNING_KEY": self.valid_key_1,
+        }
+
+        # Act
+        with patch.dict("os.environ", environment):
+            with self.assertRaises(ImproperlyConfigured) as ctx:
                 load_secret_keys()
+
+        # Assert
+        self.assertIn("distinto", str(ctx.exception))
 
 
 class ProductionSecurityAuditTests(SimpleTestCase):
@@ -166,103 +230,98 @@ class ProductionSecurityAuditTests(SimpleTestCase):
         self.valid_k1 = secrets.token_urlsafe(48)
         self.valid_k2 = secrets.token_urlsafe(48)
 
+    def _production_kwargs(self, **overrides) -> dict:
+        kwargs = {
+            "environment": "production",
+            "debug": False,
+            "secret_key": self.valid_k1,
+            "jwt_key": self.valid_k2,
+            "allowed_hosts": ["taller.example.com"],
+            "cors_origins": ["https://taller.example.com"],
+            "csrf_origins": ["https://taller.example.com"],
+            "ssl_redirect": True,
+            "hsts_seconds": 31_536_000,
+            "hsts_preload": False,
+            "hsts_subdomains": False,
+        }
+        kwargs.update(overrides)
+        return kwargs
+
     def test_audit_passes_in_debug_development_mode(self):
-        """Permite configuración local cuando ENVIRONMENT=development y DEBUG=True."""
-        validate_production_settings(
-            environment="development",
-            debug=True,
-            secret_key="dev-key",
-            jwt_key="dev-key-2",
-            allowed_hosts=[],
-            cors_origins=[],
-            csrf_origins=[],
-            ssl_redirect=False,
-            hsts_seconds=0,
-            hsts_preload=False,
-            hsts_subdomains=False,
-        )
+        # Arrange
+        kwargs = {
+            "environment": "development",
+            "debug": True,
+            "secret_key": "dev-key",
+            "jwt_key": "dev-key-2",
+            "allowed_hosts": [],
+            "cors_origins": [],
+            "csrf_origins": [],
+            "ssl_redirect": False,
+            "hsts_seconds": 0,
+            "hsts_preload": False,
+            "hsts_subdomains": False,
+        }
+
+        # Act
+        result = validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIsNone(result)
 
     def test_audit_rejects_debug_true_in_production_environment(self):
-        """Bloquea ENVIRONMENT=production con DEBUG=True."""
-        with self.assertRaises(ImproperlyConfigured):
-            validate_production_settings(
-                environment="production",
-                debug=True,
-                secret_key=self.valid_k1,
-                jwt_key=self.valid_k2,
-                allowed_hosts=["taller.example.com"],
-                cors_origins=["https://taller.example.com"],
-                csrf_origins=["https://taller.example.com"],
-                ssl_redirect=True,
-                hsts_seconds=31_536_000,
-                hsts_preload=False,
-                hsts_subdomains=False,
-            )
+        # Arrange
+        kwargs = self._production_kwargs(debug=True)
+
+        # Act
+        with self.assertRaises(ImproperlyConfigured) as ctx:
+            validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIn("DEBUG", str(ctx.exception))
 
     def test_audit_rejects_dev_keys_in_production(self):
-        """Rechaza claves con prefijo dev- cuando DEBUG=False."""
-        with self.assertRaises(ImproperlyConfigured):
-            validate_production_settings(
-                environment="production",
-                debug=False,
-                secret_key=f"dev-{self.valid_k1}",
-                jwt_key=self.valid_k2,
-                allowed_hosts=["taller.example.com"],
-                cors_origins=["https://taller.example.com"],
-                csrf_origins=["https://taller.example.com"],
-                ssl_redirect=True,
-                hsts_seconds=31_536_000,
-                hsts_preload=False,
-                hsts_subdomains=False,
-            )
+        # Arrange
+        kwargs = self._production_kwargs(secret_key=f"dev-{self.valid_k1}")
+
+        # Act
+        with self.assertRaises(ImproperlyConfigured) as ctx:
+            validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIn("secretos", str(ctx.exception))
 
     def test_audit_rejects_wildcard_allowed_hosts(self):
-        """Rechaza comodín '*' en DJANGO_ALLOWED_HOSTS cuando DEBUG=False."""
-        with self.assertRaises(ImproperlyConfigured):
-            validate_production_settings(
-                environment="production",
-                debug=False,
-                secret_key=self.valid_k1,
-                jwt_key=self.valid_k2,
-                allowed_hosts=["*"],
-                cors_origins=["https://taller.example.com"],
-                csrf_origins=["https://taller.example.com"],
-                ssl_redirect=True,
-                hsts_seconds=31_536_000,
-                hsts_preload=False,
-                hsts_subdomains=False,
-            )
+        # Arrange
+        kwargs = self._production_kwargs(allowed_hosts=["*"])
+
+        # Act
+        with self.assertRaises(ImproperlyConfigured) as ctx:
+            validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIn("DJANGO_ALLOWED_HOSTS", str(ctx.exception))
 
     def test_audit_rejects_http_and_local_origins(self):
-        """Rechaza orígenes HTTP o locales/privados cuando DEBUG=False."""
-        with self.assertRaises(ImproperlyConfigured):
-            validate_production_settings(
-                environment="production",
-                debug=False,
-                secret_key=self.valid_k1,
-                jwt_key=self.valid_k2,
-                allowed_hosts=["taller.example.com"],
-                cors_origins=["http://localhost:4200"],
-                csrf_origins=["https://taller.example.com"],
-                ssl_redirect=True,
-                hsts_seconds=31_536_000,
-                hsts_preload=False,
-                hsts_subdomains=False,
-            )
+        # Arrange
+        kwargs = self._production_kwargs(
+            cors_origins=["http://localhost:4200"]
+        )
+
+        # Act
+        with self.assertRaises(ImproperlyConfigured) as ctx:
+            validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIn("local", str(ctx.exception).lower())
 
     def test_audit_rejects_disabled_ssl_redirect(self):
-        """Exige SECURE_SSL_REDIRECT=True cuando DEBUG=False."""
-        with self.assertRaises(ImproperlyConfigured):
-            validate_production_settings(
-                environment="production",
-                debug=False,
-                secret_key=self.valid_k1,
-                jwt_key=self.valid_k2,
-                allowed_hosts=["taller.example.com"],
-                cors_origins=["https://taller.example.com"],
-                csrf_origins=["https://taller.example.com"],
-                ssl_redirect=False,
-                hsts_seconds=31_536_000,
-                hsts_preload=False,
-                hsts_subdomains=False,
-            )
+        # Arrange
+        kwargs = self._production_kwargs(ssl_redirect=False)
+
+        # Act
+        with self.assertRaises(ImproperlyConfigured) as ctx:
+            validate_production_settings(**kwargs)
+
+        # Assert
+        self.assertIn("SECURE_SSL_REDIRECT", str(ctx.exception))
