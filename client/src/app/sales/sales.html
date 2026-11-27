@@ -9,19 +9,19 @@
     <button
       type="button"
       (click)="back.emit()"
-      class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
+      class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
     >
       Volver al dashboard
     </button>
   </header>
 
   @if (errorMessage()) {
-    <p role="alert" class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+    <p role="alert" class="rounded-lg border border-red-400 bg-red-950/30 px-4 py-3 text-sm text-red-300">
       {{ errorMessage() }}
     </p>
   }
   @if (successMessage()) {
-    <p role="status" class="rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
+    <p role="status" class="rounded-lg border border-emerald-400 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
       {{ successMessage() }}
     </p>
   }
@@ -30,8 +30,9 @@
     #saleFormElement
     [formGroup]="saleForm"
     (ngSubmit)="saveSale()"
-    class="space-y-5 rounded-xl border border-[#33434F] bg-[#172129] p-5 md:p-6"
+    class="space-y-5 rounded-xl border border-[#5A7085] bg-[#172129] p-5 md:p-6"
     novalidate
+    [attr.aria-busy]="isSaving()"
   >
     <div>
       <h3 class="text-base font-semibold text-[#F1F6F8]">
@@ -48,65 +49,78 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Producto *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="sales-product_name">Producto *</label>
         <input
+          id="sales-product_name"
           formControlName="product_name"
           type="text"
           maxlength="120"
           autocomplete="off"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="saleForm.controls.product_name.touched && saleForm.controls.product_name.invalid"
+          [attr.aria-describedby]="saleForm.controls.product_name.touched && saleForm.controls.product_name.invalid ? 'sales-product_name-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.product_name.touched && saleForm.controls.product_name.invalid) {
-          <span class="block text-xs text-red-400">Ingresá el nombre del producto.</span>
+          <span id="sales-product_name-error" role="alert" class="block text-xs text-red-400">Ingresá el nombre del producto.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Cliente (opcional)</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="sales-customer_name">Cliente (opcional)</label>
         <input
+          id="sales-customer_name"
           formControlName="customer_name"
           type="text"
           maxlength="120"
           autocomplete="off"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Cantidad *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="sales-quantity">Cantidad *</label>
         <input
+          id="sales-quantity"
           formControlName="quantity"
           type="number"
           min="1"
           max="2147483647"
           step="1"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="saleForm.controls.quantity.touched && saleForm.controls.quantity.invalid"
+          [attr.aria-describedby]="saleForm.controls.quantity.touched && saleForm.controls.quantity.invalid ? 'sales-quantity-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.quantity.touched && saleForm.controls.quantity.invalid) {
-          <span class="block text-xs text-red-400">Ingresá una cantidad entera mayor a cero.</span>
+          <span id="sales-quantity-error" role="alert" class="block text-xs text-red-400">Ingresá una cantidad entera mayor a cero.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Precio unitario (ARS) *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="sales-unit_price">Precio unitario (ARS) *</label>
         <input
+          id="sales-unit_price"
           formControlName="unit_price"
           type="number"
           min="0"
           step="0.01"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="saleForm.controls.unit_price.touched && saleForm.controls.unit_price.invalid"
+          [attr.aria-describedby]="saleForm.controls.unit_price.touched && saleForm.controls.unit_price.invalid ? 'sales-unit_price-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (saleForm.controls.unit_price.touched && saleForm.controls.unit_price.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
+          <span id="sales-unit_price-error" role="alert" class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
         }
-      </label>
+      </div>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-[#AFBDC7]">
         Total:
-        <strong class="text-[#F1F6F8]">
+        <strong aria-live="polite" aria-atomic="true" class="text-[#F1F6F8]">
           @if (previewTotal() !== null) {
             {{ previewTotal() | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
           } @else {
@@ -120,7 +134,7 @@
             type="button"
             (click)="cancelEdit()"
             [disabled]="isSaving() || deletingSaleId() !== null"
-            class="mr-3 rounded-lg border border-[#33434F] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+            class="mr-3 rounded-lg border border-[#5A7085] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
           >
             Cancelar edición
           </button>
@@ -142,8 +156,8 @@
     </div>
   </form>
 
-  <section class="overflow-hidden rounded-xl border border-[#33434F] bg-[#172129]">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33434F] px-5 py-4">
+  <section class="overflow-hidden rounded-xl border border-[#5A7085] bg-[#172129]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#5A7085] px-5 py-4">
       <div>
         <h3 class="font-semibold text-[#F1F6F8]">Ventas registradas</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">El total de cada operación se calcula en el servidor.</p>
@@ -152,14 +166,14 @@
         type="button"
         (click)="loadSales()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
       >
         {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
       </button>
     </div>
 
     @if (isLoading() && sales().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando ventas…</p>
+      <p role="status" class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando ventas…</p>
     } @else if (sales().length === 0) {
       <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">
         Todavía no hay ventas registradas.
@@ -178,7 +192,7 @@
               <th scope="col" class="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#33434F] text-[#AFBDC7]">
+          <tbody class="divide-y divide-[#5A7085] text-[#AFBDC7]">
             @for (sale of sales(); track sale.id) {
               <tr class="align-top hover:bg-[#0C1218]">
                 <td class="whitespace-nowrap px-5 py-4 text-xs text-[#AFBDC7]">
@@ -199,16 +213,18 @@
                     <button
                       type="button"
                       (click)="deleteSale(sale)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="isSaving() || deletingSaleId() !== null"
-                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       {{ deletingSaleId() === sale.id ? 'Eliminando…' : 'Confirmar' }}
                     </button>
                     <button
                       type="button"
                       (click)="pendingDeleteId.set(null)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="deletingSaleId() !== null"
-                      class="ml-2 rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
+                      class="ml-2 rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
                     >
                       Cancelar
                     </button>
@@ -217,7 +233,7 @@
                       type="button"
                       (click)="editSale(sale)"
                       [disabled]="isSaving() || deletingSaleId() !== null"
-                      class="rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
+                      class="rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
                     >
                       Editar
                     </button>
@@ -225,7 +241,7 @@
                       type="button"
                       (click)="askToDelete(sale.id)"
                       [disabled]="isSaving() || deletingSaleId() !== null"
-                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="ml-2 rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       Eliminar
                     </button>

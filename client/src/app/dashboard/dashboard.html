@@ -1,4 +1,4 @@
-<main class="min-h-screen w-full bg-[#0C1218] text-[#F1F6F8] px-6 py-10 md:px-12">
+<main id="main-content" class="min-h-screen w-full bg-[#0C1218] text-[#F1F6F8] px-6 py-10 md:px-12">
   <div class="max-w-6xl mx-auto">
     <header class="flex items-start justify-between gap-4">
       <div>
@@ -13,31 +13,32 @@
       <button
         type="button"
         (click)="logout()"
-        class="text-xs text-[#AFBDC7] border border-[#33434F] bg-[#172129] px-3.5 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform"
+        class="text-xs text-[#AFBDC7] border border-[#5A7085] bg-[#172129] px-3.5 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform"
       >
         Cerrar sesión
       </button>
     </header>
 
-    <div class="border-t border-[#33434F] mt-3 mb-7"></div>
+    <div class="border-t border-[#5A7085] mt-3 mb-7"></div>
 
+    <div id="module-content" tabindex="-1">
     @if (selectedModule() === 'repairs') {
-      <app-repairs (back)="selectedModule.set(null)" />
+      <app-repairs (back)="onModuleBack()" />
     } @else if (selectedModule() === 'inventory') {
-      <app-inventory (back)="selectedModule.set(null)" />
+      <app-inventory (back)="onModuleBack()" />
     } @else if (selectedModule() === 'customers') {
-      <app-customers (back)="selectedModule.set(null)" />
+      <app-customers (back)="onModuleBack()" />
     } @else if (selectedModule() === 'suppliers') {
-      <app-suppliers (back)="selectedModule.set(null)" />
+      <app-suppliers (back)="onModuleBack()" />
     } @else if (selectedModule() === 'sales') {
-      <app-sales (back)="selectedModule.set(null)" />
+      <app-sales (back)="onModuleBack()" />
     } @else if (selectedModule() === 'reports') {
-      <app-reports (back)="selectedModule.set(null)" />
+      <app-reports (back)="onModuleBack()" />
     } @else {
       @if (selectedModule()) {
         <p
           role="status"
-          class="mb-5 rounded-lg border border-[#33434F] bg-[#172129] px-4 py-3 text-sm text-[#AFBDC7]"
+          class="mb-5 rounded-lg border border-[#5A7085] bg-[#172129] px-4 py-3 text-sm text-[#AFBDC7]"
         >
           Esta sección todavía no está disponible.
         </p>
@@ -50,8 +51,9 @@
         @for (item of modules(); track item.id) {
           <button
             type="button"
+            id="module-card-{{ item.id }}"
             (click)="selectModule(item)"
-            class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#172129] border border-[#33434F] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:outline-none focus:border-[#9AF3C7]"
+            class="group relative overflow-hidden h-44 w-full rounded-xl bg-[#172129] border border-[#5A7085] p-6 flex flex-col justify-between text-left cursor-pointer active:scale-[0.99] transition-all focus:border-[#9AF3C7]"
           >
           <div class="relative z-10 max-w-[85%]">
             <h2 class="text-lg font-semibold text-[#F1F6F8]">
@@ -103,5 +105,6 @@
         }
       </section>
     }
+    </div>
   </div>
 </main>

@@ -1,3 +1,35 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+/*
+ * Foco visible accesible — WCAG 2.4.7 Focus Visible, 1.4.11 Non-text Contrast,
+ * 2.4.11 Focus Not Obscured (Minimum).
+ * Regla sin capa (unlayered) para prevalecer sobre las utilidades de Tailwind
+ * y no perder el foco al suprimir el outline por defecto.
+ */
+:focus-visible {
+  outline: 2px solid #9af3c7;
+  outline-offset: 2px;
+}
+
+/* No ocultar el foco cuando el elemento recibe foco por mouse/teclado */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/*
+ * Respetar preferencia de reducir movimiento — WCAG 2.3.3 Animation from
+ * Interactions / 2.2.2 Pause, Stop, Hide. Desactiva animaciones y transiciones
+ * no esenciales para usuarios que lo solicitan en el SO.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

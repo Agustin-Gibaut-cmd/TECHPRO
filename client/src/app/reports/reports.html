@@ -11,14 +11,14 @@
         type="button"
         (click)="loadReport()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129] disabled:opacity-60"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129] disabled:opacity-60"
       >
         {{ isLoading() ? 'Actualizando…' : 'Actualizar' }}
       </button>
       <button
         type="button"
         (click)="back.emit()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
       >
         Volver al dashboard
       </button>
@@ -26,34 +26,34 @@
   </header>
 
   @if (errorMessage()) {
-    <p role="alert" class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+    <p role="alert" class="rounded-lg border border-red-400 bg-red-950/30 px-4 py-3 text-sm text-red-300">
       {{ errorMessage() }}
     </p>
   }
 
   @if (isLoading() && report() === null) {
-    <p class="rounded-xl border border-[#33434F] bg-[#172129] px-5 py-8 text-center text-sm text-[#AFBDC7]">
+    <p role="status" class="rounded-xl border border-[#5A7085] bg-[#172129] px-5 py-8 text-center text-sm text-[#AFBDC7]">
       Cargando reportes…
     </p>
   } @else if (report(); as summary) {
     <section aria-label="Indicadores del taller" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <p class="text-xs uppercase tracking-wide text-[#AFBDC7]">Ventas registradas</p>
         <p class="mt-2 text-2xl font-semibold text-[#F1F6F8]">{{ summary.sales_count }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <p class="text-xs uppercase tracking-wide text-[#AFBDC7]">Importe total de ventas</p>
         <p class="mt-2 text-2xl font-semibold text-[#F1F6F8]">
           {{ summary.total_revenue | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
         </p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <p class="text-xs uppercase tracking-wide text-[#AFBDC7]">Promedio por registro</p>
         <p class="mt-2 text-2xl font-semibold text-[#F1F6F8]">
           {{ summary.average_sale | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
         </p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <p class="text-xs uppercase tracking-wide text-[#AFBDC7]">Valor del inventario</p>
         <p class="mt-2 text-2xl font-semibold text-[#F1F6F8]">
           {{ summary.inventory_value | currency: 'ARS' : 'symbol' : '1.2-2' : 'es-AR' }}
@@ -63,27 +63,27 @@
     </section>
 
     <section aria-label="Estado del taller" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Clientes</p>
         <p class="mt-1 text-xl font-semibold text-[#F1F6F8]">{{ summary.customer_count }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Proveedores</p>
         <p class="mt-1 text-xl font-semibold text-[#F1F6F8]">{{ summary.supplier_count }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Productos</p>
         <p class="mt-1 text-xl font-semibold text-[#F1F6F8]">{{ summary.inventory_count }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Unidades en stock</p>
         <p class="mt-1 text-xl font-semibold text-[#F1F6F8]">{{ summary.inventory_units }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Stock bajo</p>
         <p class="mt-1 text-xl font-semibold text-amber-300">{{ summary.low_stock_count }}</p>
       </article>
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-4">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-4">
         <p class="text-xs text-[#AFBDC7]">Reparaciones abiertas</p>
         <p class="mt-1 text-xl font-semibold text-[#F1F6F8]">{{ summary.open_repair_count }}</p>
         <p class="mt-1 text-xs text-[#AFBDC7]">De {{ summary.repair_count }} en total</p>
@@ -91,7 +91,7 @@
     </section>
 
     <section class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <h3 class="font-semibold text-[#F1F6F8]">Ventas por mes</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">
           Últimos seis meses. Mes actual: {{ formatMonth(summary.current_month) }}; los meses sin ventas muestran $0.
@@ -167,7 +167,7 @@
         </svg>
       </article>
 
-      <article class="rounded-xl border border-[#33434F] bg-[#172129] p-5">
+      <article class="rounded-xl border border-[#5A7085] bg-[#172129] p-5">
         <h3 class="font-semibold text-[#F1F6F8]">Productos más vendidos</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">Unidades registradas en las ventas.</p>
         <svg

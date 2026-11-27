@@ -82,6 +82,24 @@ export class Dashboard {
   /** Selecciona el módulo activo del panel. */
   selectModule(dashboardModule: DashboardModule): void {
     this.selectedModule.set(dashboardModule.id);
+    // WCAG 2.4.3 Focus Order: no perder el foco al reemplazar el contenido.
+    this.focusElement('module-content');
+  }
+
+  /** Vuelve al listado de módulos y restaura el foco en la tarjeta de origen. */
+  onModuleBack(): void {
+    const previousModule: DashboardSelectedModule = this.selectedModule();
+    this.selectedModule.set(null);
+    if (previousModule !== null) {
+      // WCAG 2.4.3 Focus Order: devolver el foco al control que abrió el módulo.
+      this.focusElement(`module-card-${previousModule}`);
+    }
+  }
+
+  private focusElement(elementId: string): void {
+    setTimeout((): void => {
+      document.getElementById(elementId)?.focus();
+    }, 0);
   }
 
   /** Cierra la sesión actual y redirige al login. */

@@ -9,7 +9,7 @@
     <button
       type="button"
       (click)="back.emit()"
-      class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
+      class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
     >
       Volver al dashboard
     </button>
@@ -18,7 +18,7 @@
   @if (errorMessage()) {
     <p
       role="alert"
-      class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300"
+      class="rounded-lg border border-red-400 bg-red-950/30 px-4 py-3 text-sm text-red-300"
     >
       {{ errorMessage() }}
     </p>
@@ -26,7 +26,7 @@
   @if (successMessage()) {
     <p
       role="status"
-      class="rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300"
+      class="rounded-lg border border-emerald-400 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300"
     >
       {{ successMessage() }}
     </p>
@@ -36,8 +36,9 @@
     #inventoryFormElement
     [formGroup]="inventoryForm"
     (ngSubmit)="saveItem()"
-    class="space-y-5 rounded-xl border border-[#33434F] bg-[#172129] p-5 md:p-6"
+    class="space-y-5 rounded-xl border border-[#5A7085] bg-[#172129] p-5 md:p-6"
     novalidate
+    [attr.aria-busy]="isSaving()"
   >
     <div>
       <h3 class="text-base font-semibold text-[#F1F6F8]">
@@ -53,95 +54,117 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Nombre del producto *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-name">Nombre del producto *</label>
         <input
+          id="inventory-name"
           formControlName="name"
           type="text"
           maxlength="120"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="inventoryForm.controls.name.touched && inventoryForm.controls.name.invalid"
+          [attr.aria-describedby]="inventoryForm.controls.name.touched && inventoryForm.controls.name.invalid ? 'inventory-name-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (inventoryForm.controls.name.touched && inventoryForm.controls.name.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
+          <span id="inventory-name-error" role="alert" class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>SKU *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-sku">SKU *</label>
         <input
+          id="inventory-sku"
           formControlName="sku"
           type="text"
           maxlength="40"
           autocomplete="off"
           placeholder="Ej.: CARGADOR-001"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="inventoryForm.controls.sku.touched && inventoryForm.controls.sku.invalid"
+          [attr.aria-describedby]="inventoryForm.controls.sku.touched && inventoryForm.controls.sku.invalid ? 'inventory-sku-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (inventoryForm.controls.sku.touched && inventoryForm.controls.sku.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un SKU de hasta 40 caracteres.</span>
+          <span id="inventory-sku-error" role="alert" class="block text-xs text-red-400">Ingresá un SKU de hasta 40 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Categoría</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-category">Categoría</label>
         <input
+          id="inventory-category"
           formControlName="category"
           type="text"
           maxlength="80"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Cantidad disponible *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-quantity">Cantidad disponible *</label>
         <input
+          id="inventory-quantity"
           formControlName="quantity"
           type="number"
           min="0"
           step="1"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="inventoryForm.controls.quantity.touched && inventoryForm.controls.quantity.invalid"
+          [attr.aria-describedby]="inventoryForm.controls.quantity.touched && inventoryForm.controls.quantity.invalid ? 'inventory-quantity-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (inventoryForm.controls.quantity.touched && inventoryForm.controls.quantity.invalid) {
-          <span class="block text-xs text-red-400">Ingresá una cantidad entera igual o mayor a cero.</span>
+          <span id="inventory-quantity-error" role="alert" class="block text-xs text-red-400">Ingresá una cantidad entera igual o mayor a cero.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Stock mínimo *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-min_stock">Stock mínimo *</label>
         <input
+          id="inventory-min_stock"
           formControlName="min_stock"
           type="number"
           min="0"
           step="1"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="inventoryForm.controls.min_stock.touched && inventoryForm.controls.min_stock.invalid"
+          [attr.aria-describedby]="inventoryForm.controls.min_stock.touched && inventoryForm.controls.min_stock.invalid ? 'inventory-min_stock-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (inventoryForm.controls.min_stock.touched && inventoryForm.controls.min_stock.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un valor entero igual o mayor a cero.</span>
+          <span id="inventory-min_stock-error" role="alert" class="block text-xs text-red-400">Ingresá un valor entero igual o mayor a cero.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Precio unitario (ARS) *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="inventory-unit_price">Precio unitario (ARS) *</label>
         <input
+          id="inventory-unit_price"
           formControlName="unit_price"
           type="number"
           min="0"
           step="0.01"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="inventoryForm.controls.unit_price.touched && inventoryForm.controls.unit_price.invalid"
+          [attr.aria-describedby]="inventoryForm.controls.unit_price.touched && inventoryForm.controls.unit_price.invalid ? 'inventory-unit_price-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (inventoryForm.controls.unit_price.touched && inventoryForm.controls.unit_price.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
+          <span id="inventory-unit_price-error" role="alert" class="block text-xs text-red-400">Ingresá un precio no negativo con hasta 2 decimales.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2 lg:col-span-3">
-        <span>Descripción</span>
+      <div class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2 lg:col-span-3">
+        <label for="inventory-description">Descripción</label>
         <textarea
+          id="inventory-description"
           formControlName="description"
           rows="3"
           maxlength="1000"
-          class="w-full resize-y rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full resize-y rounded-lg border border-[#5A7085] bg-[#171717] px-3 py-2.5 text-[#ededed] focus:border-[#9AF3C7]"
         ></textarea>
-      </label>
+      </div>
     </div>
 
     <div class="flex justify-end">
@@ -150,7 +173,7 @@
           type="button"
           (click)="cancelEdit()"
           [disabled]="isSaving() || deletingItemId() !== null"
-          class="mr-3 rounded-lg border border-[#33434F] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+          class="mr-3 rounded-lg border border-[#5A7085] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
         >
           Cancelar edición
         </button>
@@ -171,8 +194,8 @@
     </div>
   </form>
 
-  <section class="overflow-hidden rounded-xl border border-[#33434F] bg-[#172129]">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33434F] px-5 py-4">
+  <section class="overflow-hidden rounded-xl border border-[#5A7085] bg-[#172129]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#5A7085] px-5 py-4">
       <div>
         <h3 class="font-semibold text-[#F1F6F8]">Productos registrados</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">Los datos son privados de tu cuenta.</p>
@@ -181,14 +204,14 @@
         type="button"
         (click)="loadItems()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
       >
         {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
       </button>
     </div>
 
     @if (isLoading() && items().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando inventario…</p>
+      <p role="status" class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando inventario…</p>
     } @else if (items().length === 0) {
       <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">
         Todavía no hay productos registrados.
@@ -206,7 +229,7 @@
               <th scope="col" class="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#33434F] text-[#AFBDC7]">
+          <tbody class="divide-y divide-[#5A7085] text-[#AFBDC7]">
             @for (item of items(); track item.id) {
               <tr class="align-top hover:bg-[#0C1218]">
                 <td class="px-5 py-4">
@@ -238,16 +261,18 @@
                     <button
                       type="button"
                       (click)="deleteItem(item)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="isSaving() || deletingItemId() !== null"
-                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       {{ deletingItemId() === item.id ? 'Eliminando…' : 'Confirmar' }}
                     </button>
                     <button
                       type="button"
                       (click)="pendingDeleteId.set(null)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="deletingItemId() !== null"
-                      class="ml-2 rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
+                      class="ml-2 rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
                     >
                       Cancelar
                     </button>
@@ -256,7 +281,7 @@
                       type="button"
                       (click)="editItem(item)"
                       [disabled]="isSaving() || deletingItemId() !== null"
-                      class="rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
+                      class="rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
                     >
                       Editar
                     </button>
@@ -264,7 +289,7 @@
                       type="button"
                       (click)="askToDelete(item.id)"
                       [disabled]="isSaving() || deletingItemId() !== null"
-                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="ml-2 rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       Eliminar
                     </button>

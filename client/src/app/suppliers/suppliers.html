@@ -9,19 +9,19 @@
     <button
       type="button"
       (click)="back.emit()"
-      class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
+      class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
     >
       Volver al dashboard
     </button>
   </header>
 
   @if (errorMessage()) {
-    <p role="alert" class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+    <p role="alert" class="rounded-lg border border-red-400 bg-red-950/30 px-4 py-3 text-sm text-red-300">
       {{ errorMessage() }}
     </p>
   }
   @if (successMessage()) {
-    <p role="status" class="rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
+    <p role="status" class="rounded-lg border border-emerald-400 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
       {{ successMessage() }}
     </p>
   }
@@ -30,8 +30,9 @@
     #supplierFormElement
     [formGroup]="supplierForm"
     (ngSubmit)="saveSupplier()"
-    class="space-y-5 rounded-xl border border-[#33434F] bg-[#172129] p-5 md:p-6"
+    class="space-y-5 rounded-xl border border-[#5A7085] bg-[#172129] p-5 md:p-6"
     novalidate
+    [attr.aria-busy]="isSaving()"
   >
     <div>
       <h3 class="text-base font-semibold text-[#F1F6F8]">
@@ -45,68 +46,81 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Nombre del proveedor *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="suppliers-name">Nombre del proveedor *</label>
         <input
+          id="suppliers-name"
           formControlName="name"
           type="text"
           maxlength="120"
           autocomplete="organization"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="supplierForm.controls.name.touched && supplierForm.controls.name.invalid"
+          [attr.aria-describedby]="supplierForm.controls.name.touched && supplierForm.controls.name.invalid ? 'suppliers-name-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (supplierForm.controls.name.touched && supplierForm.controls.name.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
+          <span id="suppliers-name-error" role="alert" class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Teléfono *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="suppliers-phone">Teléfono *</label>
         <input
+          id="suppliers-phone"
           formControlName="phone"
           type="tel"
           autocomplete="tel"
           maxlength="32"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="supplierForm.controls.phone.touched && supplierForm.controls.phone.invalid"
+          [attr.aria-describedby]="supplierForm.controls.phone.touched && supplierForm.controls.phone.invalid ? 'suppliers-phone-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (supplierForm.controls.phone.touched && supplierForm.controls.phone.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un teléfono de hasta 32 caracteres.</span>
+          <span id="suppliers-phone-error" role="alert" class="block text-xs text-red-400">Ingresá un teléfono de hasta 32 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Correo electrónico</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="suppliers-email">Correo electrónico</label>
         <input
+          id="suppliers-email"
           formControlName="email"
           type="email"
           autocomplete="email"
           maxlength="254"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          [attr.aria-invalid]="supplierForm.controls.email.touched && supplierForm.controls.email.invalid"
+          [attr.aria-describedby]="supplierForm.controls.email.touched && supplierForm.controls.email.invalid ? 'suppliers-email-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (supplierForm.controls.email.touched && supplierForm.controls.email.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un correo válido.</span>
+          <span id="suppliers-email-error" role="alert" class="block text-xs text-red-400">Ingresá un correo válido.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Domicilio</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="suppliers-address">Domicilio</label>
         <input
+          id="suppliers-address"
           formControlName="address"
           type="text"
           autocomplete="street-address"
           maxlength="200"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2">
-        <span>Notas</span>
+      <div class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2">
+        <label for="suppliers-notes">Notas</label>
         <textarea
+          id="suppliers-notes"
           formControlName="notes"
           rows="3"
           maxlength="1000"
-          class="w-full resize-y rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          class="w-full resize-y rounded-lg border border-[#5A7085] bg-[#171717] px-3 py-2.5 text-[#ededed] focus:border-[#9AF3C7]"
         ></textarea>
-      </label>
+      </div>
     </div>
 
     <div class="flex justify-end">
@@ -115,7 +129,7 @@
           type="button"
           (click)="cancelEdit()"
           [disabled]="isSaving() || deletingSupplierId() !== null"
-          class="mr-3 rounded-lg border border-[#33434F] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+          class="mr-3 rounded-lg border border-[#5A7085] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
         >
           Cancelar edición
         </button>
@@ -136,8 +150,8 @@
     </div>
   </form>
 
-  <section class="overflow-hidden rounded-xl border border-[#33434F] bg-[#172129]">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33434F] px-5 py-4">
+  <section class="overflow-hidden rounded-xl border border-[#5A7085] bg-[#172129]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#5A7085] px-5 py-4">
       <div>
         <h3 class="font-semibold text-[#F1F6F8]">Proveedores registrados</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">Solo vos podés acceder a estos contactos.</p>
@@ -146,14 +160,14 @@
         type="button"
         (click)="loadSuppliers()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
       >
         {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
       </button>
     </div>
 
     @if (isLoading() && suppliers().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando proveedores…</p>
+      <p role="status" class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando proveedores…</p>
     } @else if (suppliers().length === 0) {
       <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">
         Todavía no hay proveedores registrados.
@@ -170,7 +184,7 @@
               <th scope="col" class="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#33434F] text-[#AFBDC7]">
+          <tbody class="divide-y divide-[#5A7085] text-[#AFBDC7]">
             @for (supplier of suppliers(); track supplier.id) {
               <tr class="align-top hover:bg-[#0C1218]">
                 <td class="px-5 py-4">
@@ -193,16 +207,18 @@
                     <button
                       type="button"
                       (click)="deleteSupplier(supplier)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="isSaving() || deletingSupplierId() !== null"
-                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       {{ deletingSupplierId() === supplier.id ? 'Eliminando…' : 'Confirmar' }}
                     </button>
                     <button
                       type="button"
                       (click)="pendingDeleteId.set(null)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="deletingSupplierId() !== null"
-                      class="ml-2 rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
+                      class="ml-2 rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
                     >
                       Cancelar
                     </button>
@@ -211,7 +227,7 @@
                       type="button"
                       (click)="editSupplier(supplier)"
                       [disabled]="isSaving() || deletingSupplierId() !== null"
-                      class="rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
+                      class="rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:opacity-50"
                     >
                       Editar
                     </button>
@@ -219,7 +235,7 @@
                       type="button"
                       (click)="askToDelete(supplier.id)"
                       [disabled]="isSaving() || deletingSupplierId() !== null"
-                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="ml-2 rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       Eliminar
                     </button>

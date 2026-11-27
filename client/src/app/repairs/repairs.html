@@ -9,7 +9,7 @@
     <button
       type="button"
       (click)="back.emit()"
-      class="rounded-lg border border-[#33434F] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
+      class="rounded-lg border border-[#5A7085] px-3 py-2 text-sm text-[#AFBDC7] hover:bg-[#172129]"
     >
       Volver al dashboard
     </button>
@@ -18,7 +18,7 @@
   @if (errorMessage()) {
     <p
       role="alert"
-      class="rounded-lg border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-300"
+      class="rounded-lg border border-red-400 bg-red-950/30 px-4 py-3 text-sm text-red-300"
     >
       {{ errorMessage() }}
     </p>
@@ -26,7 +26,7 @@
   @if (successMessage()) {
     <p
       role="status"
-      class="rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300"
+      class="rounded-lg border border-emerald-400 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300"
     >
       {{ successMessage() }}
     </p>
@@ -36,8 +36,9 @@
     #repairFormSection
     [formGroup]="repairForm"
     (ngSubmit)="saveRepair()"
-    class="space-y-5 rounded-xl border border-[#33434F] bg-[#172129] p-5 md:p-6"
+    class="space-y-5 rounded-xl border border-[#5A7085] bg-[#172129] p-5 md:p-6"
     novalidate
+    [attr.aria-busy]="isSaving()"
   >
     <div>
       <h3 class="text-base font-semibold text-[#F1F6F8]">
@@ -51,93 +52,113 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Nombre del cliente *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-customer_name">Nombre del cliente *</label>
         <input
+          id="repairs-customer_name"
           formControlName="customer_name"
           type="text"
           autocomplete="name"
           maxlength="120"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="repairForm.controls.customer_name.touched && repairForm.controls.customer_name.invalid"
+          [attr.aria-describedby]="repairForm.controls.customer_name.touched && repairForm.controls.customer_name.invalid ? 'repairs-customer_name-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (repairForm.controls.customer_name.touched && repairForm.controls.customer_name.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
+          <span id="repairs-customer_name-error" role="alert" class="block text-xs text-red-400">Ingresá un nombre de hasta 120 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Teléfono *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-customer_phone">Teléfono *</label>
         <input
+          id="repairs-customer_phone"
           formControlName="customer_phone"
           type="tel"
           autocomplete="tel"
           maxlength="32"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="repairForm.controls.customer_phone.touched && repairForm.controls.customer_phone.invalid"
+          [attr.aria-describedby]="repairForm.controls.customer_phone.touched && repairForm.controls.customer_phone.invalid ? 'repairs-customer_phone-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (repairForm.controls.customer_phone.touched && repairForm.controls.customer_phone.invalid) {
-          <span class="block text-xs text-red-400">Ingresá un teléfono de hasta 32 caracteres.</span>
+          <span id="repairs-customer_phone-error" role="alert" class="block text-xs text-red-400">Ingresá un teléfono de hasta 32 caracteres.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Tipo de equipo *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-device_type">Tipo de equipo *</label>
         <input
+          id="repairs-device_type"
           formControlName="device_type"
           type="text"
           maxlength="80"
           placeholder="Ej.: notebook, teléfono, consola"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          [attr.aria-invalid]="repairForm.controls.device_type.touched && repairForm.controls.device_type.invalid"
+          [attr.aria-describedby]="repairForm.controls.device_type.touched && repairForm.controls.device_type.invalid ? 'repairs-device_type-error' : null"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
         @if (repairForm.controls.device_type.touched && repairForm.controls.device_type.invalid) {
-          <span class="block text-xs text-red-400">Ingresá el tipo de equipo.</span>
+          <span id="repairs-device_type-error" role="alert" class="block text-xs text-red-400">Ingresá el tipo de equipo.</span>
         }
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Marca y modelo</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-device_model">Marca y modelo</label>
         <input
+          id="repairs-device_model"
           formControlName="device_model"
           type="text"
           maxlength="100"
           placeholder="Ej.: Lenovo ThinkPad T14"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Número de serie</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-serial_number">Número de serie</label>
         <input
+          id="repairs-serial_number"
           formControlName="serial_number"
           type="text"
           maxlength="100"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         />
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#AFBDC7]">
-        <span>Estado *</span>
+      <div class="space-y-1.5 text-sm text-[#AFBDC7]">
+        <label for="repairs-status">Estado *</label>
         <select
+          id="repairs-status"
           formControlName="status"
-          class="w-full rounded-lg border border-[#33434F] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] outline-none focus:border-[#9AF3C7]"
+          aria-required="true"
+          class="w-full rounded-lg border border-[#5A7085] bg-[#0C1218] px-3 py-2.5 text-[#F1F6F8] focus:border-[#9AF3C7]"
         >
           @for (status of statuses; track status.value) {
             <option [value]="status.value">{{ status.label }}</option>
           }
         </select>
-      </label>
+      </div>
 
-      <label class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2">
-        <span>Falla reportada *</span>
+      <div class="space-y-1.5 text-sm text-[#c7c7c7] md:col-span-2">
+        <label for="repairs-issue_description">Falla reportada *</label>
         <textarea
+          id="repairs-issue_description"
           formControlName="issue_description"
           rows="3"
           maxlength="2000"
-          class="w-full resize-y rounded-lg border border-[#383838] bg-[#171717] px-3 py-2.5 text-[#ededed] outline-none focus:border-[#737373]"
+          aria-required="true"
+          [attr.aria-invalid]="repairForm.controls.issue_description.touched && repairForm.controls.issue_description.invalid"
+          [attr.aria-describedby]="repairForm.controls.issue_description.touched && repairForm.controls.issue_description.invalid ? 'repairs-issue_description-error' : null"
+          class="w-full resize-y rounded-lg border border-[#5A7085] bg-[#171717] px-3 py-2.5 text-[#ededed] focus:border-[#9AF3C7]"
         ></textarea>
         @if (repairForm.controls.issue_description.touched && repairForm.controls.issue_description.invalid) {
-          <span class="block text-xs text-red-400">Describí la falla (máximo 2000 caracteres).</span>
+          <span id="repairs-issue_description-error" role="alert" class="block text-xs text-red-400">Describí la falla (máximo 2000 caracteres).</span>
         }
-      </label>
+      </div>
     </div>
 
     <div class="flex justify-end">
@@ -146,7 +167,7 @@
           type="button"
           (click)="cancelEdit()"
           [disabled]="isSaving()"
-          class="mr-3 rounded-lg border border-[#33434F] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+          class="mr-3 rounded-lg border border-[#5A7085] px-4 py-2.5 text-sm text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
         >
           Cancelar edición
         </button>
@@ -167,8 +188,8 @@
     </div>
   </form>
 
-  <section class="overflow-hidden rounded-xl border border-[#33434F] bg-[#172129]">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33434F] px-5 py-4">
+  <section class="overflow-hidden rounded-xl border border-[#5A7085] bg-[#172129]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#5A7085] px-5 py-4">
       <div>
         <h3 class="font-semibold text-[#F1F6F8]">Reparaciones registradas</h3>
         <p class="mt-1 text-xs text-[#AFBDC7]">Datos cargados desde el servidor.</p>
@@ -177,14 +198,14 @@
         type="button"
         (click)="loadRepairs()"
         [disabled]="isLoading()"
-        class="rounded-lg border border-[#33434F] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
+        class="rounded-lg border border-[#5A7085] px-3 py-2 text-xs text-[#AFBDC7] hover:bg-[#0C1218] disabled:opacity-60"
       >
         {{ isLoading() ? 'Cargando…' : 'Recargar lista' }}
       </button>
     </div>
 
     @if (isLoading() && repairs().length === 0) {
-      <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando reparaciones…</p>
+      <p role="status" class="px-5 py-8 text-center text-sm text-[#AFBDC7]">Cargando reparaciones…</p>
     } @else if (repairs().length === 0) {
       <p class="px-5 py-8 text-center text-sm text-[#AFBDC7]">
         Todavía no hay reparaciones registradas.
@@ -203,7 +224,7 @@
               <th scope="col" class="px-5 py-3">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#33434F] text-[#AFBDC7]">
+          <tbody class="divide-y divide-[#5A7085] text-[#AFBDC7]">
             @for (repair of repairs(); track repair.id) {
               <tr class="align-top hover:bg-[#0C1218]">
                 <td class="whitespace-nowrap px-5 py-4 font-medium text-[#F1F6F8]">#{{ repair.id }}</td>
@@ -231,16 +252,18 @@
                     <button
                       type="button"
                       (click)="deleteRepair(repair)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="isSaving() || deletingRepairId() !== null"
-                      class="rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       {{ deletingRepairId() === repair.id ? 'Eliminando…' : 'Confirmar' }}
                     </button>
                     <button
                       type="button"
                       (click)="pendingDeleteId.set(null)"
+                      (keydown.escape)="pendingDeleteId.set(null)"
                       [disabled]="deletingRepairId() !== null"
-                      class="ml-2 rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
+                      class="ml-2 rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#AFBDC7] hover:bg-[#0C1218]"
                     >
                       Cancelar
                     </button>
@@ -249,7 +272,7 @@
                       type="button"
                       (click)="editRepair(repair)"
                       [disabled]="isSaving() || deletingRepairId() !== null || editingRepairId() === repair.id"
-                      class="rounded-md border border-[#33434F] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:cursor-not-allowed disabled:opacity-50"
+                      class="rounded-md border border-[#5A7085] px-3 py-1.5 text-xs text-[#F1F6F8] hover:bg-[#0C1218] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {{ editingRepairId() === repair.id ? 'Editando' : 'Editar' }}
                     </button>
@@ -257,7 +280,7 @@
                       type="button"
                       (click)="askToDelete(repair.id)"
                       [disabled]="isSaving() || deletingRepairId() !== null"
-                      class="ml-2 rounded-md border border-red-900/70 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+                      class="ml-2 rounded-md border border-red-400 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >
                       Eliminar
                     </button>
