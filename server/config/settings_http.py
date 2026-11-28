@@ -1,0 +1,42 @@
+"""Configuración HTTP, CORS y CSRF."""
+
+from .env import env_bool, env_int, env_list, env_str
+
+DEBUG = env_bool("DEBUG", False)
+
+LOCAL_DEV_ORIGINS = "http://localhost:4200,http://127.0.0.1:4200"
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", LOCAL_DEV_ORIGINS if DEBUG else "")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", LOCAL_DEV_ORIGINS if DEBUG else "")
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "x-csrftoken",
+    "x-requested-with",
+]
+CORS_PREFLIGHT_MAX_AGE = env_int("CORS_PREFLIGHT_MAX_AGE", 86400)
+
+CSRF_COOKIE_HTTPONLY = env_bool("CSRF_COOKIE_HTTPONLY", True)
+CSRF_COOKIE_PATH = env_str("CSRF_COOKIE_PATH", "/api/")
+CSRF_COOKIE_SAMESITE = env_str("CSRF_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_USE_SESSIONS = False
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+SECURE_REFERRER_POLICY = env_str("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
+X_FRAME_OPTIONS = env_str("X_FRAME_OPTIONS", "DENY")
+
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG)
+TRUST_X_FORWARDED_PROTO = env_bool("TRUST_X_FORWARDED_PROTO", False)
+SECURE_PROXY_SSL_HEADER = (
+    ("HTTP_X_FORWARDED_PROTO", "https") if TRUST_X_FORWARDED_PROTO else None
+)
+
+SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0 if DEBUG else 31_536_000)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)

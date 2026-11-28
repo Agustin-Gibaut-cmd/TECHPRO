@@ -50,7 +50,7 @@ describe('AuthForm', () => {
   });
 
   it('validates registration credentials and matching passwords', async () => {
-    component.registerMode = true;
+    fixture.componentRef.setInput('registerMode', true);
     fixture.detectChanges();
     await fixture.whenStable();
 
